@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GlobalEx Courier &amp; Logistics - Detalle de Envío</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-left">
+      <span class="menu-icon">&#9776;</span>
+      <div>
+        <div class="logo">Global<span class="ex">Ex</span></div>
+        <span class="logo-sub">COURIER &amp; LOGISTICS</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="avatar" data-user-avatar>AE</div>
+      <span class="name" data-user-name>Usuario</span>
+      <button class="logout-btn" data-logout>Salir</button>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="page-header">
+      <h1 class="page-title">Envío <span class="code" id="detail-code">-</span></h1>
+      <div class="header-actions no-print">
+        <a href="dashboard.html" class="btn btn-outline">Volver al Panel</a>
+        <button class="btn btn-primary" id="print-btn">Imprimir Etiqueta</button>
+      </div>
+    </div>
+
+    <div id="content"></div>
+  </main>
+
+  <script type="module" src="js/detail.js"></script>
+</body>
+</html>

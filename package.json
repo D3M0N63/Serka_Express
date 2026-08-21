@@ -1,0 +1,12 @@
+{
+  "name": "globalex-courier",
+  "version": "1.0.0",
+  "description": "Sistema de gestion de envios GlobalEx Courier & Logistics",
+  "type": "module",
+  "scripts": {
+    "dev": "netlify dev"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^0.10.4"
+  }
+}

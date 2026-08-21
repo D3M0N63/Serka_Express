@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GlobalEx Courier &amp; Logistics - Ingresar</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-logo">
+        <div class="logo">Global<span class="ex">Ex</span></div>
+        <span class="logo-sub">COURIER &amp; LOGISTICS</span>
+      </div>
+
+      <div class="error-banner" id="error-banner"></div>
+
+      <form id="login-form">
+        <div class="field">
+          <label for="username">Usuario</label>
+          <input type="text" id="username" name="username" autocomplete="username" required />
+        </div>
+        <div class="field" style="margin-top: 14px;">
+          <label for="password">Contraseña</label>
+          <input type="password" id="password" name="password" autocomplete="current-password" required />
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 22px;">
+          Ingresar
+        </button>
+      </form>
+
+      <p class="hint">Usuario: <strong>admin</strong> &middot; Contraseña: <strong>admin123</strong></p>
+      <p class="hint"><a href="track.html">Rastrear un envío sin iniciar sesión &rarr;</a></p>
+    </div>
+  </div>
+
+  <script type="module" src="js/login.js"></script>
+</body>
+</html>

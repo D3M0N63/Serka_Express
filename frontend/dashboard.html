@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GlobalEx Courier &amp; Logistics - Panel</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-left">
+      <span class="menu-icon">&#9776;</span>
+      <div>
+        <div class="logo">Global<span class="ex">Ex</span></div>
+        <span class="logo-sub">COURIER &amp; LOGISTICS</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="avatar" data-user-avatar>AE</div>
+      <span class="name" data-user-name>Usuario</span>
+      <button class="logout-btn" data-logout>Salir</button>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="page-header">
+      <h1 class="page-title">Panel de Envíos</h1>
+      <a href="new-shipment.html" class="btn btn-primary">+ Registro de Envío</a>
+    </div>
+
+    <div class="stats-row" id="stats-row"></div>
+
+    <div class="card">
+      <div class="toolbar">
+        <input type="text" id="search" placeholder="Buscar por código, remitente o destinatario..." />
+      </div>
+      <div id="table-wrap" class="table-wrap">
+        <table class="shipments">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Remitente</th>
+              <th>Destinatario</th>
+              <th>Origen &rarr; Destino</th>
+              <th>Estado</th>
+              <th>Total</th>
+              <th>Fecha</th>
+            </tr>
+          </thead>
+          <tbody id="shipments-body"></tbody>
+        </table>
+        <div class="empty-state" id="empty-state" style="display:none;">
+          No hay envíos registrados todavía.
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="js/dashboard.js"></script>
+</body>
+</html>
