@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Serka Express - Mis Envíos</title>
+  <title>Serka Express - Nuevo Cliente</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -31,49 +31,50 @@
   </header>
 
   <nav class="subnav">
-    <a href="dashboard.html" class="subnav-link active">Inicio</a>
+    <a href="dashboard.html" class="subnav-link">Inicio</a>
     <a href="shipments.html" class="subnav-link">Envíos</a>
-    <a href="clients.html" class="subnav-link">Clientes</a>
+    <a href="clients.html" class="subnav-link active">Clientes</a>
     <a href="caja.html" class="subnav-link">Caja</a>
     <a href="pagar.html" class="subnav-link">Pagar</a>
   </nav>
 
-  <main class="page">
+  <main class="page" style="max-width: 560px;">
     <div class="page-header">
-      <h1 class="page-title">Mis Envíos</h1>
-      <a href="new-shipment.html" class="btn btn-primary">+ Registro de Envío</a>
+      <h1 class="page-title" id="form-title">Nuevo Cliente</h1>
+      <a href="clients.html" class="btn btn-outline">Volver a Clientes</a>
     </div>
 
-    <div class="stats-row" id="stats-row"></div>
+    <div class="error-banner" id="error-banner"></div>
 
     <div class="card">
-      <div class="toolbar">
-        <input type="text" id="search" placeholder="Buscar por código, nombre o CI/RUC..." />
-      </div>
-      <div id="table-wrap" class="table-wrap">
-        <table class="shipments">
-          <thead>
-            <tr>
-              <th>Código</th>
-              <th>Remitente</th>
-              <th>Destinatario</th>
-              <th>Origen &rarr; Destino</th>
-              <th>Estado</th>
-              <th>Total</th>
-              <th>Fecha</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="shipments-body"></tbody>
-        </table>
-        <div class="empty-state" id="empty-state" style="display:none;">
-          Todavía no registraste ningún envío.
+      <form id="client-form">
+        <div class="field">
+          <label for="name">Nombre completo</label>
+          <input type="text" id="name" required />
         </div>
-      </div>
-      <div class="pager" id="pager"></div>
+        <div class="field">
+          <label for="dni">CI/RUC</label>
+          <input type="text" id="dni" />
+        </div>
+        <div class="field">
+          <label for="address">Dirección</label>
+          <input type="text" id="address" />
+        </div>
+        <div class="field">
+          <label for="phone">Tel</label>
+          <input type="text" id="phone" />
+        </div>
+        <div class="field">
+          <label for="email">Correo</label>
+          <input type="email" id="email" />
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-dark" id="save-btn">Guardar Cliente</button>
+        </div>
+      </form>
     </div>
   </main>
 
-  <script type="module" src="js/dashboard.js"></script>
+  <script type="module" src="js/new-client.js"></script>
 </body>
 </html>

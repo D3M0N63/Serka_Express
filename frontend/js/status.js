@@ -13,11 +13,11 @@ export function statusClass(status) {
 
 export function formatDate(isoString) {
   if (!isoString) return "-";
-  const d = new Date(isoString.replace(" ", "T") + "Z");
+  const d = new Date(isoString);
   return d.toLocaleString("es-PE", { dateStyle: "medium", timeStyle: "short" });
 }
 
 export function formatMoney(value) {
-  const n = Number(value) || 0;
-  return `$${n.toFixed(2)}`;
+  const n = Math.round(Number(value)) || 0;
+  return `₲ ${n.toLocaleString("es-PY")}`;
 }

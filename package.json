@@ -1,7 +1,7 @@
 {
-  "name": "globalex-courier",
+  "name": "serka-express",
   "version": "1.0.0",
-  "description": "Sistema de gestion de envios GlobalEx Courier & Logistics",
+  "description": "Sistema de gestion de envios Serka Express",
   "type": "module",
   "scripts": {
     "dev": "netlify dev"

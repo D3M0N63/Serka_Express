@@ -1,13 +1,31 @@
 import { ensureSchema } from "./lib/db.js";
 import { verifyToken } from "./lib/auth.js";
-import { login, me } from "./lib/auth-handlers.js";
+import { login, me, updateProfile } from "./lib/auth-handlers.js";
 import {
   createShipment,
   listShipments,
   getShipment,
+  updateShipment,
+  deleteShipment,
   updateShipmentStatus,
   trackShipment,
+  collectShipment,
+  listPendingCollection,
 } from "./lib/shipments.js";
+import {
+  createClient,
+  listClients,
+  getClient,
+  updateClient,
+  deleteClient,
+} from "./lib/clients.js";
+import {
+  getCurrentSession,
+  openSession,
+  addMovement,
+  closeSession,
+  listSessions,
+} from "./lib/cash.js";
 
 function json(status, data) {
   return new Response(JSON.stringify(data), {
@@ -59,6 +77,10 @@ export default async (req) => {
       const { status, data } = await me(user);
       return json(status, data);
     }
+    if (pathname === "/auth/me" && method === "PATCH") {
+      const { status, data } = await updateProfile(await safeJson(req), user);
+      return json(status, data);
+    }
 
     if (pathname === "/shipments" && method === "POST") {
       const { status, data } = await createShipment(await safeJson(req), user);
@@ -66,7 +88,21 @@ export default async (req) => {
     }
 
     if (pathname === "/shipments" && method === "GET") {
-      const { status, data } = await listShipments(query);
+      const { status, data } = await listShipments(query, user);
+      return json(status, data);
+    }
+
+    if (pathname === "/shipments/pending-collection" && method === "GET") {
+      const { status, data } = await listPendingCollection(query);
+      return json(status, data);
+    }
+
+    const collectMatch = pathname.match(/^\/shipments\/([^/]+)\/collect$/);
+    if (collectMatch && method === "POST") {
+      const { status, data } = await collectShipment(
+        decodeURIComponent(collectMatch[1]),
+        await safeJson(req)
+      );
       return json(status, data);
     }
 
@@ -75,11 +111,69 @@ export default async (req) => {
       const { status, data } = await getShipment(decodeURIComponent(shipmentMatch[1]));
       return json(status, data);
     }
+    if (shipmentMatch && method === "PUT") {
+      const { status, data } = await updateShipment(
+        decodeURIComponent(shipmentMatch[1]),
+        await safeJson(req)
+      );
+      return json(status, data);
+    }
     if (shipmentMatch && method === "PATCH") {
       const { status, data } = await updateShipmentStatus(
         decodeURIComponent(shipmentMatch[1]),
         await safeJson(req)
       );
+      return json(status, data);
+    }
+    if (shipmentMatch && method === "DELETE") {
+      const { status, data } = await deleteShipment(decodeURIComponent(shipmentMatch[1]));
+      return json(status, data);
+    }
+
+    if (pathname === "/clients" && method === "POST") {
+      const { status, data } = await createClient(await safeJson(req), user);
+      return json(status, data);
+    }
+    if (pathname === "/clients" && method === "GET") {
+      const { status, data } = await listClients(query);
+      return json(status, data);
+    }
+
+    const clientMatch = pathname.match(/^\/clients\/([^/]+)$/);
+    if (clientMatch && method === "GET") {
+      const { status, data } = await getClient(decodeURIComponent(clientMatch[1]));
+      return json(status, data);
+    }
+    if (clientMatch && method === "PUT") {
+      const { status, data } = await updateClient(
+        decodeURIComponent(clientMatch[1]),
+        await safeJson(req)
+      );
+      return json(status, data);
+    }
+    if (clientMatch && method === "DELETE") {
+      const { status, data } = await deleteClient(decodeURIComponent(clientMatch[1]));
+      return json(status, data);
+    }
+
+    if (pathname === "/cash/current" && method === "GET") {
+      const { status, data } = await getCurrentSession();
+      return json(status, data);
+    }
+    if (pathname === "/cash/open" && method === "POST") {
+      const { status, data } = await openSession(await safeJson(req), user);
+      return json(status, data);
+    }
+    if (pathname === "/cash/movements" && method === "POST") {
+      const { status, data } = await addMovement(await safeJson(req), user);
+      return json(status, data);
+    }
+    if (pathname === "/cash/close" && method === "POST") {
+      const { status, data } = await closeSession(await safeJson(req), user);
+      return json(status, data);
+    }
+    if (pathname === "/cash/sessions" && method === "GET") {
+      const { status, data } = await listSessions(query);
       return json(status, data);
     }
 

@@ -46,7 +46,7 @@ function render(s) {
   result.innerHTML = `
     <div class="card" style="margin-bottom: 20px;">
       <div style="font-size:13px; color:var(--text-muted);">Código de envío</div>
-      <div style="font-size:20px; font-weight:800; color:var(--navy-dark); margin-bottom:14px;">${s.code}</div>
+      <div style="font-size:20px; font-weight:800; color:var(--ink); margin-bottom:14px;">${s.code}</div>
       <div style="font-size:14px; color:var(--text-muted);">
         ${s.origin || "-"} &rarr; ${s.destination || "-"} &middot; ${s.package_type || "Paquete"}
       </div>

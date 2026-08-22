@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Serka Express - Mis Envíos</title>
+  <title>Serka Express - Caja</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -31,49 +31,48 @@
   </header>
 
   <nav class="subnav">
-    <a href="dashboard.html" class="subnav-link active">Inicio</a>
+    <a href="dashboard.html" class="subnav-link">Inicio</a>
     <a href="shipments.html" class="subnav-link">Envíos</a>
     <a href="clients.html" class="subnav-link">Clientes</a>
-    <a href="caja.html" class="subnav-link">Caja</a>
+    <a href="caja.html" class="subnav-link active">Caja</a>
     <a href="pagar.html" class="subnav-link">Pagar</a>
   </nav>
 
   <main class="page">
     <div class="page-header">
-      <h1 class="page-title">Mis Envíos</h1>
-      <a href="new-shipment.html" class="btn btn-primary">+ Registro de Envío</a>
+      <h1 class="page-title">Caja</h1>
     </div>
 
-    <div class="stats-row" id="stats-row"></div>
+    <div class="error-banner" id="error-banner"></div>
 
-    <div class="card">
-      <div class="toolbar">
-        <input type="text" id="search" placeholder="Buscar por código, nombre o CI/RUC..." />
-      </div>
-      <div id="table-wrap" class="table-wrap">
+    <div id="caja-content"></div>
+
+    <div class="card" style="margin-top:24px;">
+      <h2 class="card-title">Historial de Cajas</h2>
+      <div id="history-wrap" class="table-wrap">
         <table class="shipments">
           <thead>
             <tr>
-              <th>Código</th>
-              <th>Remitente</th>
-              <th>Destinatario</th>
-              <th>Origen &rarr; Destino</th>
+              <th>Apertura</th>
+              <th>Cierre</th>
+              <th>Inicial</th>
+              <th>Esperado</th>
+              <th>Contado</th>
+              <th>Diferencia</th>
+              <th>Transferencias</th>
               <th>Estado</th>
-              <th>Total</th>
-              <th>Fecha</th>
-              <th></th>
             </tr>
           </thead>
-          <tbody id="shipments-body"></tbody>
+          <tbody id="history-body"></tbody>
         </table>
-        <div class="empty-state" id="empty-state" style="display:none;">
-          Todavía no registraste ningún envío.
+        <div class="empty-state" id="history-empty" style="display:none;">
+          Todavía no hay cajas cerradas.
         </div>
       </div>
-      <div class="pager" id="pager"></div>
+      <div class="pager" id="history-pager"></div>
     </div>
   </main>
 
-  <script type="module" src="js/dashboard.js"></script>
+  <script type="module" src="js/caja.js"></script>
 </body>
 </html>
