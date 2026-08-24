@@ -566,25 +566,27 @@ function renderEtiquetas(s) {
     .map(
       (n) => `
     <div class="etiqueta">
-      <div class="etq-header">
-        <div class="etq-brand">SERKA EXPRESS</div>
-        <div class="etq-page">${n}/${total}</div>
+      <div class="etq-content">
+        <div class="etq-header">
+          <div class="etq-brand">SERKA EXPRESS</div>
+          <div class="etq-page">${n}/${total}</div>
+        </div>
+        <div class="etq-row"><strong>Guía:</strong> ${s.code} &nbsp; <strong>Fecha:</strong> ${dateLabel}</div>
+        <div class="etq-row"><strong>Monto:</strong> ${formatMoney(s.total)}</div>
+        <div class="etq-row"><strong>Origen:</strong> ${(s.origin || "-").toUpperCase()}</div>
+        <div class="etq-row"><strong>Remitente:</strong> ${s.sender_name || "-"}</div>
+        <div class="etq-row"><strong>CI/RUC:</strong> ${s.sender_dni || "-"}</div>
+        <div class="etq-spacer"></div>
+        <div class="etq-row"><strong>Destinatario:</strong> ${s.recipient_name || "-"}</div>
+        <div class="etq-row"><strong>CI/RUC:</strong> ${s.recipient_dni || "-"}</div>
+        <div class="etq-spacer"></div>
+        <div class="etq-row"><strong>Destino:</strong> ${(s.destination || "-").toUpperCase()}</div>
+        <div class="etq-bottom-row">
+          <span>${s.code}-${n}/${total}</span>
+          <span>${(s.payment_method || "-").toUpperCase()}</span>
+        </div>
+        <svg class="etq-barcode" id="etq-barcode-${n}"></svg>
       </div>
-      <div class="etq-row"><strong>Guía:</strong> ${s.code} &nbsp; <strong>Fecha:</strong> ${dateLabel}</div>
-      <div class="etq-row"><strong>Monto:</strong> ${formatMoney(s.total)}</div>
-      <div class="etq-row"><strong>Origen:</strong> ${(s.origin || "-").toUpperCase()}</div>
-      <div class="etq-row"><strong>Remitente:</strong> ${s.sender_name || "-"}</div>
-      <div class="etq-row"><strong>CI/RUC:</strong> ${s.sender_dni || "-"}</div>
-      <div class="etq-spacer"></div>
-      <div class="etq-row"><strong>Destinatario:</strong> ${s.recipient_name || "-"}</div>
-      <div class="etq-row"><strong>CI/RUC:</strong> ${s.recipient_dni || "-"}</div>
-      <div class="etq-spacer"></div>
-      <div class="etq-row"><strong>Destino:</strong> ${(s.destination || "-").toUpperCase()}</div>
-      <div class="etq-bottom-row">
-        <span>${s.code}-${n}/${total}</span>
-        <span>${(s.payment_method || "-").toUpperCase()}</span>
-      </div>
-      <svg class="etq-barcode" id="etq-barcode-${n}"></svg>
     </div>
   `
     )

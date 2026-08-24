@@ -192,7 +192,7 @@ function renderShipmentIncome(shipmentIncome) {
   list.innerHTML = shipmentIncome
     .map(
       (s) => `
-    <div class="info-row">
+    <div class="info-row info-row-wrap">
       <span class="info-label">
         <span class="badge ${s.payment_method === "Efectivo" ? "badge-entregado" : "badge-reparto"}">${s.payment_method}</span>
         <a href="detail.html?code=${encodeURIComponent(s.code)}">${s.code}</a>
@@ -214,7 +214,7 @@ function renderMovements(movements) {
   list.innerHTML = movements
     .map(
       (m) => `
-    <div class="info-row">
+    <div class="info-row info-row-wrap">
       <span class="info-label">
         <span class="badge ${m.type === "ingreso" ? "badge-entregado" : "badge-cancelado"}">${m.type}</span>
         ${m.description || ""}
