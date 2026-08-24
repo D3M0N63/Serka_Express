@@ -334,6 +334,15 @@ function slugifyFilename(name) {
   return slug || "cliente";
 }
 
+// La fuente "Courier" que trae jsPDF por defecto no tiene el glifo de ₲
+// (sale como caracteres sueltos/espaciados): en el PDF se usa "Gs." en su
+// lugar, que si es parte de la fuente estandar. En pantalla/impresion
+// normal (formatMoney) el ₲ se ve bien porque ahi renderiza el navegador.
+function formatMoneyForPdf(value) {
+  const n = Math.round(Number(value)) || 0;
+  return `Gs. ${n.toLocaleString("es-PY")}`;
+}
+
 // WhatsApp no permite adjuntar un archivo y preseleccionar el contacto al
 // mismo tiempo: se prioriza abrir el chat con el numero correcto (con un
 // mensaje ya escrito) y se descarga el PDF aparte para que el usuario lo
@@ -450,7 +459,7 @@ function buildTicketPdfDoc(s) {
   doc.setFont("courier", "bold");
   doc.setFontSize(11);
   doc.text("A PAGAR", marginX, y);
-  doc.text(formatMoney(s.total), rightX, y, { align: "right" });
+  doc.text(formatMoneyForPdf(s.total), rightX, y, { align: "right" });
   y += 5;
   doc.setLineWidth(0.5);
   doc.line(marginX, y, rightX, y);
