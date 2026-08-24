@@ -1062,6 +1062,27 @@ table.shipments tr:hover td {
     max-width: none;
   }
 
+  /* Etiqueta de bulto: mismo detalle de envio, pero con su propia hoja
+     (ver setPrintMode en detail.js, que cambia la clase del body y el
+     tamaño de @page antes de imprimir). */
+  .label-print-page .topbar,
+  .label-print-page .subnav,
+  .label-print-page .page-header,
+  .label-print-page #content,
+  .label-print-page .print-label {
+    display: none !important;
+  }
+  .label-print-page .print-etiqueta {
+    display: block !important;
+  }
+  body.label-print-page {
+    background: #fff;
+  }
+  .label-print-page .page {
+    padding: 0;
+    max-width: none;
+  }
+
   /* Planilla: al imprimir se oculta todo menos la hoja de ruta (el resto
      ya usa .no-print, esta regla solo cubre topbar/subnav/titulo). */
   .manifest-print-page .topbar,
@@ -1301,4 +1322,69 @@ table.shipments tr:hover td {
   border-top: 1px solid #000;
   padding-top: 4px;
   text-align: center;
+}
+
+/* ---------- Etiqueta de bulto (imprimible, con codigo de barras) ---------- */
+.print-etiqueta {
+  display: none;
+}
+
+.etiqueta {
+  font-family: Arial, Helvetica, sans-serif;
+  color: #000;
+  width: 100mm;
+  height: 55mm;
+  padding: 3mm 4mm;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.etiqueta:not(:last-child) {
+  page-break-after: always;
+  break-after: page;
+}
+
+.etq-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 2mm;
+}
+
+.etq-brand {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.etq-page {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.etq-row {
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.etq-row strong {
+  font-weight: 700;
+}
+
+.etq-spacer {
+  height: 2mm;
+}
+
+.etq-bottom-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: 1mm;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.etq-barcode {
+  width: 100%;
+  margin-top: 1mm;
+  height: 14mm;
 }

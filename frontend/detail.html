@@ -5,10 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Serka Express - Detalle de Envío</title>
   <link rel="stylesheet" href="css/style.css" />
-  <style>
-    /* Tamaño de tique termico (80mm), no A4/carta. Solo aplica a esta
+  <style id="print-page-style">
+    /* Tamaño de tique termico (80mm) por defecto. Solo aplica a esta
        pagina: Chromium no siempre respeta @page anidado dentro de una
-       media query, por eso va como regla de nivel superior aca. */
+       media query, por eso va como regla de nivel superior aca. Se
+       reescribe por JS antes de imprimir la etiqueta (ver detail.js:
+       setPrintMode), que usa un tamaño distinto. */
     @page {
       size: 80mm 260mm;
       margin: 0;
@@ -16,6 +18,8 @@
   </style>
   <!-- jsPDF: genera el PDF del ticket (sin firmas) para enviar por WhatsApp. -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <!-- JsBarcode: codigo de barras de la etiqueta de bulto. -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.12.3/JsBarcode.all.min.js"></script>
 </head>
 <body class="ticket-print-page">
   <header class="topbar">
@@ -60,12 +64,14 @@
         <button class="btn btn-outline" id="edit-btn">Editar</button>
         <button class="btn btn-outline" id="delete-btn" style="color:var(--red);">Eliminar</button>
         <button class="btn btn-outline" id="whatsapp-btn">Enviar Ticket por WhatsApp</button>
+        <button class="btn btn-outline" id="print-etiqueta-btn">Imprimir Etiqueta</button>
         <button class="btn btn-primary" id="print-btn">Imprimir Ticket</button>
       </div>
     </div>
 
     <div id="content"></div>
     <div id="print-label" class="print-label"></div>
+    <div id="print-etiqueta" class="print-etiqueta"></div>
   </main>
 
   <script type="module" src="js/detail.js"></script>

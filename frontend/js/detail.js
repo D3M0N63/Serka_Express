@@ -10,8 +10,11 @@ const shouldPrint = params.get("print") === "1";
 
 const content = document.getElementById("content");
 const printLabel = document.getElementById("print-label");
+const printEtiqueta = document.getElementById("print-etiqueta");
+const printPageStyle = document.getElementById("print-page-style");
 const detailCode = document.getElementById("detail-code");
 const printBtn = document.getElementById("print-btn");
+const printEtiquetaBtn = document.getElementById("print-etiqueta-btn");
 const editBtn = document.getElementById("edit-btn");
 const deleteBtn = document.getElementById("delete-btn");
 const whatsappBtn = document.getElementById("whatsapp-btn");
@@ -33,7 +36,27 @@ if (!code) {
   load();
 }
 
-printBtn.addEventListener("click", () => window.print());
+// El ticket (80mm) y la etiqueta de bulto usan tamaños de hoja distintos
+// en la misma pagina: antes de imprimir se cambia la clase del body y el
+// contenido del <style id="print-page-style"> (que define el @page).
+function setPrintMode(mode) {
+  document.body.classList.remove("ticket-print-page", "label-print-page");
+  document.body.classList.add(mode === "etiqueta" ? "label-print-page" : "ticket-print-page");
+  printPageStyle.textContent =
+    mode === "etiqueta" ? "@page { size: 100mm 55mm; margin: 0; }" : "@page { size: 80mm 260mm; margin: 0; }";
+}
+
+printBtn.addEventListener("click", () => {
+  setPrintMode("ticket");
+  window.print();
+});
+
+printEtiquetaBtn.addEventListener("click", () => {
+  if (!currentShipment) return;
+  renderEtiquetas(currentShipment);
+  setPrintMode("etiqueta");
+  window.print();
+});
 
 editBtn.addEventListener("click", () => {
   window.location.href = `new-shipment.html?code=${encodeURIComponent(code)}`;
@@ -59,7 +82,10 @@ async function load() {
     currentShipment = s;
     detailCode.textContent = s.code;
     render(s, history || []);
-    if (shouldPrint) setTimeout(() => window.print(), 300);
+    if (shouldPrint) {
+      setPrintMode("ticket");
+      setTimeout(() => window.print(), 300);
+    }
   } catch (err) {
     content.innerHTML = `<div class="card">${err.message}</div>`;
   }
@@ -527,6 +553,51 @@ function infoRow(label, value, tone) {
       <span class="info-value ${cls}">${hasValue ? value : "-"}</span>
     </div>
   `;
+}
+
+// Etiqueta de bulto (una por paquete: si package_quantity es 4, salen 4
+// etiquetas numeradas 1/4..4/4, cada una en su propia hoja de 100x55mm),
+// con codigo de barras del codigo de envío.
+function renderEtiquetas(s) {
+  const total = Math.max(1, Math.round(Number(s.package_quantity)) || 1);
+  const dateLabel = new Date(s.created_at).toLocaleDateString("es-PY");
+
+  printEtiqueta.innerHTML = Array.from({ length: total }, (_, i) => i + 1)
+    .map(
+      (n) => `
+    <div class="etiqueta">
+      <div class="etq-header">
+        <div class="etq-brand">SERKA EXPRESS</div>
+        <div class="etq-page">${n}/${total}</div>
+      </div>
+      <div class="etq-row"><strong>Guía:</strong> ${s.code} &nbsp; <strong>Fecha:</strong> ${dateLabel}</div>
+      <div class="etq-row"><strong>Monto:</strong> ${formatMoney(s.total)}</div>
+      <div class="etq-row"><strong>Origen:</strong> ${(s.origin || "-").toUpperCase()}</div>
+      <div class="etq-row"><strong>Remitente:</strong> ${s.sender_name || "-"}</div>
+      <div class="etq-row"><strong>CI/RUC:</strong> ${s.sender_dni || "-"}</div>
+      <div class="etq-spacer"></div>
+      <div class="etq-row"><strong>Destinatario:</strong> ${s.recipient_name || "-"}</div>
+      <div class="etq-row"><strong>CI/RUC:</strong> ${s.recipient_dni || "-"}</div>
+      <div class="etq-spacer"></div>
+      <div class="etq-row"><strong>Destino:</strong> ${(s.destination || "-").toUpperCase()}</div>
+      <div class="etq-bottom-row">
+        <span>${s.code}-${n}/${total}</span>
+        <span>${(s.payment_method || "-").toUpperCase()}</span>
+      </div>
+      <svg class="etq-barcode" id="etq-barcode-${n}"></svg>
+    </div>
+  `
+    )
+    .join("");
+
+  for (let n = 1; n <= total; n++) {
+    JsBarcode(`#etq-barcode-${n}`, s.code, {
+      format: "CODE128",
+      displayValue: false,
+      margin: 0,
+      height: 40,
+    });
+  }
 }
 
 // Ticket imprimible (fuente monoespaciada, secciones en mayúscula, filas
