@@ -5,8 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Serka Express - Detalle de Envío</title>
   <link rel="stylesheet" href="css/style.css" />
+  <style>
+    /* Tamaño de tique termico (80mm), no A4/carta. Solo aplica a esta
+       pagina: Chromium no siempre respeta @page anidado dentro de una
+       media query, por eso va como regla de nivel superior aca. */
+    @page {
+      size: 80mm 260mm;
+      margin: 0;
+    }
+  </style>
+  <!-- jsPDF: genera el PDF del ticket (sin firmas) para enviar por WhatsApp. -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
-<body>
+<body class="ticket-print-page">
   <header class="topbar">
     <div class="topbar-left">
       <a href="dashboard.html" class="brand">
@@ -33,9 +44,12 @@
   <nav class="subnav">
     <a href="dashboard.html" class="subnav-link">Inicio</a>
     <a href="shipments.html" class="subnav-link active">Envíos</a>
+    <a href="planilla.html" class="subnav-link">Planilla</a>
     <a href="clients.html" class="subnav-link">Clientes</a>
-    <a href="caja.html" class="subnav-link">Caja</a>
     <a href="pagar.html" class="subnav-link">Pagar</a>
+    <a href="caja.html" class="subnav-link">Caja</a>
+    <a href="usuarios.html" class="subnav-link">Usuarios</a>
+    <a href="cierres.html" class="subnav-link">Cierres</a>
   </nav>
 
   <main class="page">
@@ -45,7 +59,8 @@
         <a href="dashboard.html" class="btn btn-outline">Volver al Panel</a>
         <button class="btn btn-outline" id="edit-btn">Editar</button>
         <button class="btn btn-outline" id="delete-btn" style="color:var(--red);">Eliminar</button>
-        <button class="btn btn-primary" id="print-btn">Imprimir Etiqueta</button>
+        <button class="btn btn-outline" id="whatsapp-btn">Enviar Ticket por WhatsApp</button>
+        <button class="btn btn-primary" id="print-btn">Imprimir Ticket</button>
       </div>
     </div>
 

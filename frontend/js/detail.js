@@ -1,4 +1,4 @@
-import { api, requireAuth, initTopbar } from "./api.js";
+import { api, requireAuth, initTopbar, getUser } from "./api.js";
 import { STATUS_ORDER, statusClass, formatDate, formatMoney } from "./status.js";
 
 requireAuth();
@@ -14,6 +14,11 @@ const detailCode = document.getElementById("detail-code");
 const printBtn = document.getElementById("print-btn");
 const editBtn = document.getElementById("edit-btn");
 const deleteBtn = document.getElementById("delete-btn");
+const whatsappBtn = document.getElementById("whatsapp-btn");
+
+if (getUser()?.role !== "admin") deleteBtn.style.display = "none";
+
+let currentShipment = null;
 
 const ICONS = {
   user: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
@@ -44,23 +49,44 @@ deleteBtn.addEventListener("click", async () => {
   }
 });
 
+whatsappBtn.addEventListener("click", () => {
+  if (currentShipment) openWhatsAppModal(currentShipment);
+});
+
 async function load() {
   try {
-    const { shipment: s } = await api(`/shipments/${encodeURIComponent(code)}`);
+    const { shipment: s, history } = await api(`/shipments/${encodeURIComponent(code)}`);
+    currentShipment = s;
     detailCode.textContent = s.code;
-    render(s);
+    render(s, history || []);
     if (shouldPrint) setTimeout(() => window.print(), 300);
   } catch (err) {
     content.innerHTML = `<div class="card">${err.message}</div>`;
   }
 }
 
-function render(s) {
+// Espeja las reglas del flujo de estados que valida el backend
+// (updateShipmentStatus): el selector solo aparece en dos casos.
+// - Registrado -> Cancelado: exclusivo de Admin.
+// - En reparto -> Entregado: para todos los usuarios (a En reparto solo se
+//   llega via Planilla, nunca manualmente desde aca).
+function nextStatusOptions(currentStatus, role) {
+  if (currentStatus === "Registrado") return role === "admin" ? ["Cancelado"] : [];
+  if (currentStatus === "En reparto") return ["Entregado"];
+  return []; // En transito, Entregado y Cancelado no tienen transicion manual
+}
+
+function render(s, history) {
   const isCancelled = s.status === "Cancelado";
   const currentIndex = STATUS_ORDER.indexOf(s.status);
   const steps = isCancelled
     ? [{ label: "Cancelado", active: true }]
     : STATUS_ORDER.map((st, i) => ({ label: st, active: i <= currentIndex }));
+
+  // Ultimo registro de historial para cada estado (quien lo marco y cuando),
+  // para mostrarlo junto a cada paso de la linea de tiempo.
+  const historyByStatus = new Map();
+  for (const h of history) historyByStatus.set(h.status, h);
 
   content.innerHTML = `
     <div class="card detail-hero">
@@ -77,30 +103,29 @@ function render(s) {
 
       <ul class="timeline hero-timeline">
         ${steps
-          .map(
-            (step) => `
+          .map((step) => {
+            const record = historyByStatus.get(step.label);
+            const receivedSuffix = step.label === "Entregado" && s.received_by ? ` · Recibió: ${s.received_by}` : "";
+            const sub = step.active
+              ? record
+                ? `${formatDate(record.changed_at)}${record.changed_by_name ? ` · ${record.changed_by_name}` : ""}${receivedSuffix}`
+                : `${formatDate(s.updated_at)}${receivedSuffix}`
+              : "Pendiente";
+            return `
           <li class="${step.active ? "active" : ""}">
             <div class="dot"></div>
             <div>
               <div class="tl-title">${step.label}</div>
-              <div class="tl-sub">${step.active ? formatDate(s.updated_at) : "Pendiente"}</div>
+              <div class="tl-sub">${sub}</div>
             </div>
-          </li>`
-          )
+          </li>`;
+          })
           .join("")}
       </ul>
 
       <div class="hero-divider no-print"></div>
 
-      <div class="status-update no-print">
-        <label for="status-select">Actualizar estado</label>
-        <select id="status-select">
-          ${[...STATUS_ORDER, "Cancelado"]
-            .map((st) => `<option value="${st}" ${st === s.status ? "selected" : ""}>${st}</option>`)
-            .join("")}
-        </select>
-        <button class="btn btn-primary" id="status-save">Actualizar</button>
-      </div>
+      ${renderStatusUpdate(s)}
     </div>
 
     <div class="grid-2">
@@ -131,6 +156,7 @@ function render(s) {
         <h2 class="card-title">${ICONS.box} Detalles del Envío</h2>
         <div class="info-list">
           ${infoRow("Tipo", s.package_type)}
+          ${infoRow("Cantidad", s.package_quantity)}
         </div>
       </div>
       <div class="card">
@@ -155,23 +181,332 @@ function render(s) {
 
   renderTicket(s);
 
-  document.getElementById("status-save").addEventListener("click", async () => {
-    const btn = document.getElementById("status-save");
-    const newStatus = document.getElementById("status-select").value;
-    btn.disabled = true;
-    btn.textContent = "Actualizando...";
-    try {
-      const { shipment: updated } = await api(`/shipments/${encodeURIComponent(s.code)}`, {
-        method: "PATCH",
-        body: { status: newStatus },
-      });
-      render(updated);
-    } catch (err) {
-      alert(err.message);
-      btn.disabled = false;
-      btn.textContent = "Actualizar";
+  const saveBtn = document.getElementById("status-save");
+  if (saveBtn) {
+    saveBtn.addEventListener("click", () => {
+      const newStatus = document.getElementById("status-select").value;
+      if (newStatus === "Entregado") {
+        openDeliveryModal(s);
+      } else {
+        submitStatus(s.code, newStatus, {}, saveBtn, "Actualizar");
+      }
+    });
+  }
+}
+
+// Envia el cambio de estado al backend y recarga el detalle. `extra` puede
+// llevar received_by cuando el nuevo estado es Entregado.
+async function submitStatus(code, newStatus, extra, triggerBtn, resetLabel) {
+  if (triggerBtn) {
+    triggerBtn.disabled = true;
+    triggerBtn.textContent = "Actualizando...";
+  }
+  try {
+    await api(`/shipments/${encodeURIComponent(code)}`, {
+      method: "PATCH",
+      body: { status: newStatus, ...extra },
+    });
+    await load();
+  } catch (err) {
+    alert(err.message);
+    if (triggerBtn) {
+      triggerBtn.disabled = false;
+      triggerBtn.textContent = resetLabel;
     }
+  }
+}
+
+// Antes de marcar Entregado, pregunta quien recibio el envio: el
+// Destinatario registrado (marca de una) u Otro (pide el nombre a mano).
+function openDeliveryModal(s) {
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay";
+  overlay.innerHTML = `
+    <div class="modal-card">
+      <div class="modal-title">¿Quién recibió el envío?</div>
+      <div class="modal-options">
+        <button type="button" class="modal-option" data-value="recipient">El Destinatario</button>
+        <button type="button" class="modal-option" data-value="other">Otro</button>
+      </div>
+      <div class="field" id="received-by-field" style="display:none; margin-bottom:0;">
+        <label for="received-by-input">Nombre de quien recibió</label>
+        <input type="text" id="received-by-input" placeholder="Nombre completo" autocomplete="off" />
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" id="modal-cancel">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="modal-confirm" disabled>Actualizar estado</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  const recipientBtn = overlay.querySelector('[data-value="recipient"]');
+  const otherBtn = overlay.querySelector('[data-value="other"]');
+  const field = overlay.querySelector("#received-by-field");
+  const input = overlay.querySelector("#received-by-input");
+  const confirmBtn = overlay.querySelector("#modal-confirm");
+  const cancelBtn = overlay.querySelector("#modal-cancel");
+
+  const close = () => overlay.remove();
+  const confirm = (receivedBy) => {
+    close();
+    submitStatus(s.code, "Entregado", { received_by: receivedBy }, null, null);
+  };
+
+  // El Destinatario ya es un dato conocido: elegirlo alcanza para
+  // confirmar de una, sin pasos extra.
+  recipientBtn.addEventListener("click", () => confirm(s.recipient_name));
+
+  otherBtn.addEventListener("click", () => {
+    otherBtn.classList.add("active");
+    recipientBtn.classList.remove("active");
+    field.style.display = "block";
+    input.focus();
+    confirmBtn.disabled = !input.value.trim();
   });
+
+  input.addEventListener("input", () => {
+    confirmBtn.disabled = !input.value.trim();
+  });
+
+  confirmBtn.addEventListener("click", () => confirm(input.value.trim()));
+  cancelBtn.addEventListener("click", close);
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) close();
+  });
+}
+
+// Pregunta a quien enviar el ticket (Remitente o Destinatario). Cada
+// opcion alcanza para confirmar de una, no hace falta escribir nada.
+function openWhatsAppModal(s) {
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay";
+  overlay.innerHTML = `
+    <div class="modal-card">
+      <div class="modal-title">¿A quién enviar el ticket?</div>
+      <div class="modal-options">
+        <button type="button" class="modal-option" data-value="sender">Remitente</button>
+        <button type="button" class="modal-option" data-value="recipient">Destinatario</button>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" id="whatsapp-modal-cancel">Cancelar</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  const close = () => overlay.remove();
+  overlay.querySelector('[data-value="sender"]').addEventListener("click", () => {
+    close();
+    sendTicketViaWhatsApp(s, "sender");
+  });
+  overlay.querySelector('[data-value="recipient"]').addEventListener("click", () => {
+    close();
+    sendTicketViaWhatsApp(s, "recipient");
+  });
+  overlay.querySelector("#whatsapp-modal-cancel").addEventListener("click", close);
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) close();
+  });
+}
+
+// wa.me exige el numero completo en formato internacional, sin "+" ni
+// espacios (ej. 595981234567). Los telefonos se cargan en formato local
+// paraguayo (09XXXXXXXX), asi que se reemplaza el 0 inicial por 595.
+function normalizeWhatsAppPhone(raw) {
+  const digits = (raw || "").replace(/\D/g, "");
+  if (!digits) return null;
+  if (digits.startsWith("595")) return digits;
+  if (digits.startsWith("0")) return `595${digits.slice(1)}`;
+  return `595${digits}`;
+}
+
+// Nombre de archivo seguro a partir del nombre de la persona (sin tildes,
+// espacios como guiones, solo caracteres validos para un archivo).
+const ACCENTS = { á: "a", é: "e", í: "i", ó: "o", ú: "u", ñ: "n", ü: "u" };
+function slugifyFilename(name) {
+  const ascii = (name || "")
+    .toLowerCase()
+    .split("")
+    .map((ch) => ACCENTS[ch] || ch)
+    .join("");
+  const slug = ascii.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  return slug || "cliente";
+}
+
+// WhatsApp no permite adjuntar un archivo y preseleccionar el contacto al
+// mismo tiempo: se prioriza abrir el chat con el numero correcto (con un
+// mensaje ya escrito) y se descarga el PDF aparte para que el usuario lo
+// adjunte el con un toque.
+function sendTicketViaWhatsApp(s, target) {
+  const name = target === "sender" ? s.sender_name : s.recipient_name;
+  const rawPhone = target === "sender" ? s.sender_phone : s.recipient_phone;
+  const phone = normalizeWhatsAppPhone(rawPhone);
+
+  if (!phone) {
+    alert(`${target === "sender" ? "El remitente" : "El destinatario"} no tiene un teléfono registrado.`);
+    return;
+  }
+
+  const doc = buildTicketPdfDoc(s);
+  doc.save(`ticket-${s.code}-${slugifyFilename(name)}.pdf`);
+
+  const message = `Hola ${name || ""}, te comparto el ticket de tu envío ${s.code} de Serka Express. Te acabamos de descargar el PDF: adjuntalo en este chat.`;
+  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank");
+}
+
+// Arma el PDF del ticket (sin campos de firma) dibujando directamente con
+// jsPDF, replicando el mismo contenido que el ticket impreso.
+function buildTicketPdfDoc(s) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: "mm", format: [80, 230] });
+  const marginX = 4;
+  const width = 72;
+  const rightX = 80 - marginX;
+  let y = 8;
+
+  function rule() {
+    doc.setLineDashPattern([0.6, 0.6], 0);
+    doc.setLineWidth(0.15);
+    doc.line(marginX, y, rightX, y);
+    doc.setLineDashPattern([], 0);
+    y += 4;
+  }
+
+  function section(title) {
+    doc.setFont("courier", "bold");
+    doc.setFontSize(8);
+    doc.text(title, marginX, y);
+    y += 4;
+  }
+
+  function row(label, value) {
+    const text = value === undefined || value === null || value === "" ? "-" : String(value);
+    doc.setFont("courier", "bold");
+    doc.setFontSize(8);
+    doc.text(label, marginX, y);
+    doc.setFont("courier", "normal");
+    const labelWidth = doc.getTextWidth(label);
+    if (doc.getTextWidth(text) <= width - labelWidth - 2) {
+      doc.text(text, rightX, y, { align: "right" });
+      y += 4;
+    } else {
+      y += 4;
+      for (const line of doc.splitTextToSize(text, width)) {
+        doc.text(line, marginX, y);
+        y += 4;
+      }
+    }
+  }
+
+  function numberedItem(n, text) {
+    doc.setFont("courier", "normal");
+    doc.setFontSize(6);
+    for (const line of doc.splitTextToSize(`${n}. ${text}`, width)) {
+      doc.text(line, marginX, y);
+      y += 2.6;
+    }
+    y += 0.8;
+  }
+
+  doc.setFont("courier", "bold");
+  doc.setFontSize(13);
+  doc.text("* SERKA EXPRESS *", 40, y, { align: "center" });
+  y += 5;
+  doc.setFont("courier", "normal");
+  doc.setFontSize(8);
+  doc.text("COURRIER . TODO A TIEMPO", 40, y, { align: "center" });
+  y += 6;
+
+  doc.setFontSize(8);
+  doc.text(formatDate(s.created_at), marginX, y);
+  doc.text(`Envío: ${s.code}`, rightX, y, { align: "right" });
+  y += 3;
+  rule();
+
+  section("REMITENTE");
+  row("Nombre", s.sender_name);
+  row("CI/RUC", s.sender_dni);
+  row("Dirección", s.sender_address);
+  row("Tel", s.sender_phone);
+  rule();
+
+  section("DESTINATARIO");
+  row("Nombre", s.recipient_name);
+  row("CI/RUC", s.recipient_dni);
+  row("Dirección", s.recipient_address);
+  row("Tel", s.recipient_phone);
+  rule();
+
+  section("ENVÍO");
+  row("Tipo", s.package_type);
+  row("Cantidad", s.package_quantity);
+  row("Origen", s.origin);
+  row("Destino", s.destination);
+  row("Estado", s.status);
+  row("Pago", s.payment_method);
+  rule();
+
+  doc.setFont("courier", "bold");
+  doc.setFontSize(11);
+  doc.text("A PAGAR", marginX, y);
+  doc.text(formatMoney(s.total), rightX, y, { align: "right" });
+  y += 5;
+  doc.setLineWidth(0.5);
+  doc.line(marginX, y, rightX, y);
+  y += 6;
+
+  doc.setFont("courier", "normal");
+  doc.setFontSize(8);
+  doc.text("¡Gracias por elegir Serka Express!", 40, y, { align: "center" });
+  y += 6;
+  rule();
+
+  const terms = [
+    "En ningún caso la empresa será responsable por daños indirectos, especiales, incidentales.",
+    "Es de exclusiva responsabilidad del remitente cualquier tipo de mercadería decomisada por las autoridades competentes por no contar con la documentación legal correspondiente o que infrinja alguna disposición legal, No transportamos, Explosivos, inflamables, baterías, armas de fuego.",
+    "La empresa no se hace responsable bajo ningún concepto por efectivo que no haya sido declarado en el mismo momento del envío.",
+    "Los envíos pueden tener retrasos por motivos de inclemencias del tiempo, cierres de rutas, problemas mecánicos y otros inconvenientes presentados.",
+    "Todo tipo de encomienda frágil que no se encuentre, a criterio de la empresa, debidamente embalada para su transporte seguro, la empresa no se responsabilizará por ningún daño causado por la naturaleza del envío.",
+  ];
+  terms.forEach((text, i) => numberedItem(i + 1, text));
+
+  doc.setFont("courier", "bold");
+  doc.setFontSize(6);
+  doc.text("RECLAMOS", marginX, y);
+  y += 2.6;
+  numberedItem(1, "Si desea hacer un reclamo por envío o pedir la boleta de levante con la firma, debe solicitarlo en el plazo de 30 (TREINTA) días desde la fecha de depósito.");
+
+  doc.setFont("courier", "italic");
+  doc.setFontSize(6);
+  for (const line of doc.splitTextToSize(
+    "* El remitente se declara conocedor de las presentes Condiciones de transporte y expresa su total conformidad con la misma.",
+    width
+  )) {
+    doc.text(line, marginX, y);
+    y += 2.6;
+  }
+
+  return doc;
+}
+
+// Solo se muestra el selector si hay alguna transicion manual valida desde
+// el estado actual (ver nextStatusOptions); si no hay ninguna (ej. estado
+// final, o Registrado sin ser Admin), no se muestra nada.
+function renderStatusUpdate(s) {
+  const role = getUser()?.role;
+  const options = nextStatusOptions(s.status, role);
+  if (options.length === 0) return "";
+
+  return `
+    <div class="status-update no-print">
+      <label for="status-select">Actualizar estado</label>
+      <select id="status-select">
+        ${options.map((st) => `<option value="${st}">${st}</option>`).join("")}
+      </select>
+      <button class="btn btn-primary" id="status-save">Actualizar</button>
+    </div>
+  `;
 }
 
 function infoRow(label, value, tone) {
@@ -185,15 +520,44 @@ function infoRow(label, value, tone) {
   `;
 }
 
-// Etiqueta imprimible con formato de ticket (fuente monoespaciada,
-// secciones en mayúscula, filas etiqueta/valor), oculta en pantalla y
-// visible solo al imprimir (ver @media print en style.css).
+// Ticket imprimible (fuente monoespaciada, secciones en mayúscula, filas
+// etiqueta/valor), oculto en pantalla y visible solo al imprimir (ver
+// @media print en style.css). Se imprimen 4 copias seguidas, alternando
+// si llevan o no los campos de firma: sin firma / con firma / sin firma /
+// con firma. Cada copia sale en su propia hoja (ver .ticket + page-break
+// en style.css).
 function renderTicket(s) {
-  printLabel.innerHTML = `
+  const copies = [false, true, false, true];
+  printLabel.innerHTML = copies.map((withSignatures) => buildTicketHtml(s, withSignatures)).join("");
+}
+
+function buildTicketHtml(s, withSignatures) {
+  const signatures = withSignatures
+    ? `
+      <div class="ticket-signatures">
+        <div class="sig-top">
+          <div class="sig-line"></div>
+          <div class="sig-label">Firma</div>
+        </div>
+        <div class="sig-bottom">
+          <div class="sig-col">
+            <div class="sig-line"></div>
+            <div class="sig-label">Aclaración</div>
+          </div>
+          <div class="sig-col">
+            <div class="sig-line"></div>
+            <div class="sig-label">CI/Ruc</div>
+          </div>
+        </div>
+      </div>
+    `
+    : "";
+
+  return `
     <div class="ticket">
       <div class="ticket-header">
         <div class="ticket-title">* SERKA EXPRESS *</div>
-        <div class="ticket-sub">${s.origin ? s.origin.toUpperCase() : "COURRIER"}</div>
+        <div class="ticket-sub">COURRIER &middot; TODO A TIEMPO</div>
       </div>
       <div class="ticket-meta">
         <span>${formatDate(s.created_at)}</span>
@@ -214,6 +578,7 @@ function renderTicket(s) {
       <div class="ticket-rule"></div>
       <div class="ticket-section">ENVÍO</div>
       ${ticketRow("Tipo", s.package_type)}
+      ${ticketRow("Cantidad", s.package_quantity)}
       ${ticketRow("Origen", s.origin)}
       ${ticketRow("Destino", s.destination)}
       ${ticketRow("Estado", s.status)}
@@ -225,6 +590,22 @@ function renderTicket(s) {
       </div>
       <div class="ticket-rule-double"></div>
       <div class="ticket-footer">¡Gracias por elegir Serka Express!</div>
+      ${signatures}
+      <div class="ticket-terms">
+        <div class="ticket-rule"></div>
+        <ol class="terms-list">
+          <li>En ningún caso la empresa será responsable por daños indirectos, especiales, incidentales.</li>
+          <li>Es de exclusiva responsabilidad del remitente cualquier tipo de mercadería decomisada por las autoridades competentes por no contar con la documentación legal correspondiente o que infrinja alguna disposición legal, No transportamos, Explosivos, inflamables, baterías, armas de fuego.</li>
+          <li>La empresa no se hace responsable bajo ningún concepto por efectivo que no haya sido declarado en el mismo momento del envío.</li>
+          <li>Los envíos pueden tener retrasos por motivos de inclemencias del tiempo, cierres de rutas, problemas mecánicos y otros inconvenientes presentados.</li>
+          <li>Todo tipo de encomienda frágil que no se encuentre, a criterio de la empresa, debidamente embalada para su transporte seguro, la empresa no se responsabilizará por ningún daño causado por la naturaleza del envío.</li>
+        </ol>
+        <div class="terms-subtitle">RECLAMOS</div>
+        <ol class="terms-list">
+          <li>Si desea hacer un reclamo por envío o pedir la boleta de levante con la firma, debe solicitarlo en el plazo de 30 (TREINTA) días desde la fecha de depósito.</li>
+        </ol>
+        <div class="terms-note">* El remitente se declara conocedor de las presentes Condiciones de transporte y expresa su total conformidad con la misma.</div>
+      </div>
     </div>
   `;
 }

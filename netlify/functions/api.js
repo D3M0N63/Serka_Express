@@ -11,6 +11,11 @@ import {
   trackShipment,
   collectShipment,
   listPendingCollection,
+  listDailyManifest,
+  listManifests,
+  createManifest,
+  getManifest,
+  dispatchManifest,
 } from "./lib/shipments.js";
 import {
   createClient,
@@ -25,7 +30,9 @@ import {
   addMovement,
   closeSession,
   listSessions,
+  listAllSessions,
 } from "./lib/cash.js";
+import { listUsers, getUser, createUser, updateUser, deleteUser } from "./lib/users.js";
 
 function json(status, data) {
   return new Response(JSON.stringify(data), {
@@ -93,7 +100,38 @@ export default async (req) => {
     }
 
     if (pathname === "/shipments/pending-collection" && method === "GET") {
-      const { status, data } = await listPendingCollection(query);
+      const { status, data } = await listPendingCollection(query, user);
+      return json(status, data);
+    }
+
+    if (pathname === "/shipments/manifest" && method === "GET") {
+      const { status, data } = await listDailyManifest(query, user);
+      return json(status, data);
+    }
+
+    if (pathname === "/manifests" && method === "GET") {
+      const { status, data } = await listManifests(query);
+      return json(status, data);
+    }
+
+    if (pathname === "/manifests" && method === "POST") {
+      const { status, data } = await createManifest(await safeJson(req), user);
+      return json(status, data);
+    }
+
+    const manifestMatch = pathname.match(/^\/manifests\/([^/]+)$/);
+    if (manifestMatch && method === "GET") {
+      const { status, data } = await getManifest(decodeURIComponent(manifestMatch[1]));
+      return json(status, data);
+    }
+
+    const manifestDispatchMatch = pathname.match(/^\/manifests\/([^/]+)\/dispatch$/);
+    if (manifestDispatchMatch && method === "POST") {
+      const { status, data } = await dispatchManifest(
+        decodeURIComponent(manifestDispatchMatch[1]),
+        await safeJson(req),
+        user
+      );
       return json(status, data);
     }
 
@@ -114,19 +152,21 @@ export default async (req) => {
     if (shipmentMatch && method === "PUT") {
       const { status, data } = await updateShipment(
         decodeURIComponent(shipmentMatch[1]),
-        await safeJson(req)
+        await safeJson(req),
+        user
       );
       return json(status, data);
     }
     if (shipmentMatch && method === "PATCH") {
       const { status, data } = await updateShipmentStatus(
         decodeURIComponent(shipmentMatch[1]),
-        await safeJson(req)
+        await safeJson(req),
+        user
       );
       return json(status, data);
     }
     if (shipmentMatch && method === "DELETE") {
-      const { status, data } = await deleteShipment(decodeURIComponent(shipmentMatch[1]));
+      const { status, data } = await deleteShipment(decodeURIComponent(shipmentMatch[1]), user);
       return json(status, data);
     }
 
@@ -156,8 +196,14 @@ export default async (req) => {
       return json(status, data);
     }
 
+    // La caja de un Repartidor esta a cargo de su Sucursal: no tiene
+    // acceso propio a ninguna ruta de Caja.
+    if (pathname.startsWith("/cash") && user.role === "repartidor") {
+      return json(403, { error: "No tenés acceso a Caja. Tu caja está a cargo de tu sucursal." });
+    }
+
     if (pathname === "/cash/current" && method === "GET") {
-      const { status, data } = await getCurrentSession();
+      const { status, data } = await getCurrentSession(user);
       return json(status, data);
     }
     if (pathname === "/cash/open" && method === "POST") {
@@ -173,7 +219,40 @@ export default async (req) => {
       return json(status, data);
     }
     if (pathname === "/cash/sessions" && method === "GET") {
-      const { status, data } = await listSessions(query);
+      const { status, data } = await listSessions(query, user);
+      return json(status, data);
+    }
+
+    // Panel de cierres de caja de todas las sucursales: exclusivo de Admin.
+    if (pathname === "/cash/sessions/all" && method === "GET") {
+      if (user.role !== "admin") return json(403, { error: "No autorizado" });
+      const { status, data } = await listAllSessions(query);
+      return json(status, data);
+    }
+
+    // Gestion de usuarios: exclusiva de Admin.
+    if (pathname.startsWith("/users") && user.role !== "admin") {
+      return json(403, { error: "No autorizado" });
+    }
+    if (pathname === "/users" && method === "GET") {
+      const { status, data } = await listUsers(query);
+      return json(status, data);
+    }
+    if (pathname === "/users" && method === "POST") {
+      const { status, data } = await createUser(await safeJson(req));
+      return json(status, data);
+    }
+    const userMatch = pathname.match(/^\/users\/(\d+)$/);
+    if (userMatch && method === "GET") {
+      const { status, data } = await getUser(userMatch[1]);
+      return json(status, data);
+    }
+    if (userMatch && method === "PUT") {
+      const { status, data } = await updateUser(userMatch[1], await safeJson(req));
+      return json(status, data);
+    }
+    if (userMatch && method === "DELETE") {
+      const { status, data } = await deleteUser(userMatch[1], user.id);
       return json(status, data);
     }
 

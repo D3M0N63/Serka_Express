@@ -104,6 +104,7 @@ a {
 /* ---------- Subnav ---------- */
 .subnav {
   display: flex;
+  justify-content: center;
   gap: 4px;
   background: #fff;
   border-bottom: 1px solid var(--border);
@@ -126,9 +127,34 @@ a {
   border-bottom-color: var(--brand);
 }
 
+/* ---------- Toggle de vista (ej. Boletas / Planillas) ---------- */
+.view-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.view-tab {
+  padding: 9px 18px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.view-tab.active {
+  background: var(--ink);
+  color: var(--brand);
+  border-color: var(--ink);
+}
+
 @media (max-width: 700px) {
   .subnav {
     padding: 0 16px;
+    justify-content: flex-start;
   }
 }
 
@@ -166,6 +192,15 @@ a {
 .icon-btn.danger:hover {
   border-color: var(--red);
   color: var(--red);
+}
+
+.icon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.icon-btn:disabled:hover {
+  border-color: var(--border);
+  color: var(--text-muted);
 }
 
 @media (max-width: 700px) {
@@ -329,6 +364,12 @@ a {
 .btn-danger {
   background: var(--red);
   color: #fff;
+}
+
+.btn-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 .btn:disabled {
@@ -528,6 +569,68 @@ a {
   font-size: 14px;
 }
 
+/* ---------- Modal: confirmar quien recibio el envio ---------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 20, 20, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 100;
+}
+
+.modal-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 24px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+}
+
+.modal-title {
+  font-size: 18px;
+  font-weight: 800;
+  margin-bottom: 16px;
+}
+
+.modal-options {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.modal-option {
+  flex: 1;
+  padding: 14px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+}
+
+.modal-option:hover {
+  border-color: var(--ink);
+}
+
+.modal-option.active {
+  border-color: var(--brand);
+  background: #fffbea;
+  color: var(--ink);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+}
+
 .field {
   margin-bottom: 14px;
 }
@@ -667,6 +770,18 @@ a {
   border-radius: 8px;
   padding: 10px 14px;
   font-size: 13px;
+  margin-bottom: 16px;
+  display: none;
+}
+
+.warning-banner {
+  background: #fdf1dc;
+  color: var(--amber);
+  border: 1px solid #f3d69b;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
   margin-bottom: 16px;
   display: none;
 }
@@ -920,34 +1035,50 @@ table.shipments tr:hover td {
   color: var(--text-muted);
 }
 
-/* Tamaño de tique termico (80mm de ancho), no A4/carta. Chromium ignora
-   "size: 80mm auto" (altura automatica) al imprimir/exportar PDF y cae de
-   vuelta a tamaño carta, asi que se usa un alto fijo generoso que alcanza
-   de sobra para el contenido de la etiqueta. Debe ir fuera de @media
-   print: Chromium no siempre respeta @page anidado dentro de una media
-   query al generar el PDF/impresion. */
-@page {
-  size: 80mm 200mm;
-  margin: 0;
-}
-
 @media print {
-  .topbar, .subnav, .page-header, #content, .no-print {
+  /* Utilidad generica: oculta cualquier elemento marcado al imprimir,
+     sin importar la pagina (botones, controles, etc). */
+  .no-print {
     display: none !important;
   }
-  .print-label {
+
+  /* Detalle de envio: al imprimir se oculta todo menos el ticket
+     (ver .ticket-print-page en detail.html, que trae su propio
+     @page de 80mm en un <style> embebido). */
+  .ticket-print-page .topbar,
+  .ticket-print-page .subnav,
+  .ticket-print-page .page-header,
+  .ticket-print-page #content {
+    display: none !important;
+  }
+  .ticket-print-page .print-label {
     display: block !important;
   }
-  body {
+  body.ticket-print-page {
     background: #fff;
   }
-  .page {
+  .ticket-print-page .page {
+    padding: 0;
+    max-width: none;
+  }
+
+  /* Planilla: al imprimir se oculta todo menos la hoja de ruta (el resto
+     ya usa .no-print, esta regla solo cubre topbar/subnav/titulo). */
+  .manifest-print-page .topbar,
+  .manifest-print-page .subnav,
+  .manifest-print-page .page-header {
+    display: none !important;
+  }
+  .manifest-print-page .print-manifest {
+    display: block !important;
+  }
+  .manifest-print-page .page {
     padding: 0;
     max-width: none;
   }
 }
 
-/* ---------- Etiqueta de envío (ticket imprimible) ---------- */
+/* ---------- Ticket de envío (imprimible) ---------- */
 .print-label {
   display: none;
 }
@@ -960,6 +1091,13 @@ table.shipments tr:hover td {
   color: #000;
   font-size: 11.5px;
   line-height: 1.55;
+}
+
+/* Se imprimen 4 copias del ticket seguidas (ver renderTicket en
+   detail.js); cada una en su propia hoja, menos la ultima. */
+.ticket:not(:last-child) {
+  page-break-after: always;
+  break-after: page;
 }
 
 .ticket-header {
@@ -1031,4 +1169,136 @@ table.shipments tr:hover td {
   font-size: 11px;
   margin-top: 10px;
   letter-spacing: 0.5px;
+}
+
+/* Firmas: una linea centrada arriba (Firma) y dos lineas abajo
+   (Aclaracion / CI-Ruc), en formato triangular. */
+.ticket-signatures {
+  margin-top: 34px;
+}
+
+.sig-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.sig-top .sig-line {
+  width: 55%;
+}
+
+.sig-bottom {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sig-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.sig-line {
+  width: 90%;
+  border-top: 1px solid #000;
+  margin-bottom: 3px;
+}
+
+.sig-label {
+  font-size: 10px;
+  letter-spacing: 0.5px;
+}
+
+/* Condiciones de transporte: letra chica al pie del tique. */
+.ticket-terms {
+  margin-top: 14px;
+  font-size: 8px;
+  line-height: 1.35;
+  text-align: left;
+}
+
+.terms-list {
+  margin: 0;
+  padding-left: 12px;
+}
+
+.terms-list li {
+  margin-bottom: 3px;
+}
+
+.terms-subtitle {
+  font-weight: 700;
+  margin: 4px 0 2px;
+}
+
+.terms-note {
+  margin-top: 4px;
+  font-style: italic;
+}
+
+/* ---------- Planilla (hoja de ruta imprimible) ---------- */
+.print-manifest {
+  display: none;
+}
+
+.manifest-doc {
+  font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #000;
+  font-size: 12px;
+}
+
+.manifest-doc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  border-bottom: 2px solid #000;
+  padding-bottom: 10px;
+  margin-bottom: 14px;
+}
+
+.manifest-doc-title {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.manifest-doc-meta {
+  text-align: right;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.manifest-doc table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.manifest-doc th,
+.manifest-doc td {
+  border: 1px solid #999;
+  padding: 6px 8px;
+  text-align: left;
+  font-size: 11.5px;
+}
+
+.manifest-doc th {
+  background: #eee;
+  text-transform: uppercase;
+  font-size: 10px;
+}
+
+.manifest-doc-footer {
+  margin-top: 24px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+}
+
+.manifest-doc-footer div {
+  width: 45%;
+  border-top: 1px solid #000;
+  padding-top: 4px;
+  text-align: center;
 }

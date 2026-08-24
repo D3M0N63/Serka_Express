@@ -12,7 +12,7 @@ export async function login(body) {
     return { status: 401, data: { error: "Credenciales invalidas" } };
   }
 
-  const token = createToken({ id: user.id, username: user.username, role: user.role });
+  const token = createToken({ id: user.id, username: user.username, role: user.role, parent_id: user.parent_id });
   return {
     status: 200,
     data: {
@@ -24,7 +24,7 @@ export async function login(body) {
 
 export async function me(authUser) {
   const [user] = await sql`
-    SELECT id, username, name, role, city FROM users WHERE id = ${authUser.id}
+    SELECT id, username, name, role, city, parent_id FROM users WHERE id = ${authUser.id}
   `;
   if (!user) return { status: 404, data: { error: "Usuario no encontrado" } };
   return { status: 200, data: { user } };

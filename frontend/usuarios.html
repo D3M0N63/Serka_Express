@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Serka Express - Nuevo Cliente</title>
+  <title>Serka Express - Usuarios</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -34,50 +34,43 @@
     <a href="dashboard.html" class="subnav-link">Inicio</a>
     <a href="shipments.html" class="subnav-link">Envíos</a>
     <a href="planilla.html" class="subnav-link">Planilla</a>
-    <a href="clients.html" class="subnav-link active">Clientes</a>
+    <a href="clients.html" class="subnav-link">Clientes</a>
     <a href="pagar.html" class="subnav-link">Pagar</a>
     <a href="caja.html" class="subnav-link">Caja</a>
-    <a href="usuarios.html" class="subnav-link">Usuarios</a>
+    <a href="usuarios.html" class="subnav-link active">Usuarios</a>
     <a href="cierres.html" class="subnav-link">Cierres</a>
   </nav>
 
-  <main class="page" style="max-width: 560px;">
+  <main class="page">
     <div class="page-header">
-      <h1 class="page-title" id="form-title">Nuevo Cliente</h1>
-      <a href="clients.html" class="btn btn-outline">Volver a Clientes</a>
+      <h1 class="page-title">Usuarios</h1>
+      <a href="new-usuario.html" class="btn btn-primary">+ Nuevo Usuario</a>
     </div>
 
     <div class="error-banner" id="error-banner"></div>
 
     <div class="card">
-      <form id="client-form">
-        <div class="field">
-          <label for="name">Nombre completo</label>
-          <input type="text" id="name" required />
+      <div id="table-wrap" class="table-wrap">
+        <table class="shipments">
+          <thead>
+            <tr>
+              <th>Usuario</th>
+              <th>Nombre</th>
+              <th>Rol</th>
+              <th>Sucursal</th>
+              <th>Ciudad</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="users-body"></tbody>
+        </table>
+        <div class="empty-state" id="empty-state" style="display:none;">
+          No hay usuarios registrados todavía.
         </div>
-        <div class="field">
-          <label for="dni">CI/RUC</label>
-          <input type="text" id="dni" />
-        </div>
-        <div class="field">
-          <label for="address">Dirección</label>
-          <input type="text" id="address" />
-        </div>
-        <div class="field">
-          <label for="phone">Tel</label>
-          <input type="text" id="phone" />
-        </div>
-        <div class="field">
-          <label for="email">Correo</label>
-          <input type="email" id="email" />
-        </div>
-        <div class="form-actions">
-          <button type="submit" class="btn btn-dark" id="save-btn">Guardar Cliente</button>
-        </div>
-      </form>
+      </div>
     </div>
   </main>
 
-  <script type="module" src="js/new-client.js"></script>
+  <script type="module" src="js/usuarios.js"></script>
 </body>
 </html>

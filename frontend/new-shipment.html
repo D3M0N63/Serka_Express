@@ -33,9 +33,12 @@
   <nav class="subnav">
     <a href="dashboard.html" class="subnav-link">Inicio</a>
     <a href="shipments.html" class="subnav-link active">Envíos</a>
+    <a href="planilla.html" class="subnav-link">Planilla</a>
     <a href="clients.html" class="subnav-link">Clientes</a>
-    <a href="caja.html" class="subnav-link">Caja</a>
     <a href="pagar.html" class="subnav-link">Pagar</a>
+    <a href="caja.html" class="subnav-link">Caja</a>
+    <a href="usuarios.html" class="subnav-link">Usuarios</a>
+    <a href="cierres.html" class="subnav-link">Cierres</a>
   </nav>
 
   <main class="page">
@@ -108,6 +111,9 @@
       <div class="grid-3">
         <div class="card">
           <h2 class="card-title">Detalles del Envío</h2>
+          <p class="hint" id="details-lock-hint" style="display:none; text-align:left; margin-bottom:10px;">
+            Solo un administrador puede editar estos campos.
+          </p>
           <div class="field">
             <label for="package_type">Tipo</label>
             <select id="package_type">
@@ -117,10 +123,17 @@
               <option>Carga</option>
             </select>
           </div>
+          <div class="field">
+            <label for="package_quantity">Cantidad</label>
+            <input type="number" id="package_quantity" min="1" step="1" inputmode="numeric" value="1" />
+          </div>
         </div>
 
         <div class="card">
           <h2 class="card-title">Origen y Destino</h2>
+          <p class="hint" id="origin-dest-lock-hint" style="display:none; text-align:left; margin-bottom:10px;">
+            Solo un administrador puede editar estos campos.
+          </p>
           <div class="field">
             <label for="origin">Origen</label>
             <input type="text" id="origin" list="py-cities" placeholder="Buscar ciudad..." autocomplete="off" />
@@ -134,9 +147,12 @@
 
         <div class="card">
           <h2 class="card-title">Servicio y Pago</h2>
+          <p class="hint" id="payment-lock-hint" style="display:none; text-align:left; margin-bottom:10px;">
+            Solo un administrador puede editar estos campos.
+          </p>
           <div class="field">
             <label for="cost">Costo (Gs.)</label>
-            <input type="number" id="cost" min="0" step="1" inputmode="numeric" placeholder="0" />
+            <input type="number" id="cost" min="1" step="1" inputmode="numeric" placeholder="0" required />
           </div>
           <div class="field readonly">
             <label for="total">Total</label>
@@ -159,7 +175,6 @@
       </div>
 
       <div class="form-actions">
-        <button type="button" class="btn btn-outline" id="print-btn">Imprimir Etiqueta</button>
         <button type="submit" class="btn btn-dark" id="save-btn">Guardar Registro de Envío</button>
       </div>
     </form>

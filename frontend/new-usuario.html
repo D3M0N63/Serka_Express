@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Serka Express - Nuevo Cliente</title>
+  <title>Serka Express - Nuevo Usuario</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -34,50 +34,62 @@
     <a href="dashboard.html" class="subnav-link">Inicio</a>
     <a href="shipments.html" class="subnav-link">Envíos</a>
     <a href="planilla.html" class="subnav-link">Planilla</a>
-    <a href="clients.html" class="subnav-link active">Clientes</a>
+    <a href="clients.html" class="subnav-link">Clientes</a>
     <a href="pagar.html" class="subnav-link">Pagar</a>
     <a href="caja.html" class="subnav-link">Caja</a>
-    <a href="usuarios.html" class="subnav-link">Usuarios</a>
+    <a href="usuarios.html" class="subnav-link active">Usuarios</a>
     <a href="cierres.html" class="subnav-link">Cierres</a>
   </nav>
 
   <main class="page" style="max-width: 560px;">
     <div class="page-header">
-      <h1 class="page-title" id="form-title">Nuevo Cliente</h1>
-      <a href="clients.html" class="btn btn-outline">Volver a Clientes</a>
+      <h1 class="page-title" id="form-title">Nuevo Usuario</h1>
+      <a href="usuarios.html" class="btn btn-outline">Volver a Usuarios</a>
     </div>
 
     <div class="error-banner" id="error-banner"></div>
 
     <div class="card">
-      <form id="client-form">
+      <form id="user-form">
+        <div class="field">
+          <label for="username">Usuario</label>
+          <input type="text" id="username" autocomplete="off" required />
+        </div>
+        <div class="field">
+          <label for="password">Contraseña</label>
+          <input type="password" id="password" autocomplete="new-password" />
+          <p class="hint" id="password-hint" style="text-align:left; margin-top:6px;"></p>
+        </div>
         <div class="field">
           <label for="name">Nombre completo</label>
           <input type="text" id="name" required />
         </div>
         <div class="field">
-          <label for="dni">CI/RUC</label>
-          <input type="text" id="dni" />
+          <label for="role">Rol</label>
+          <select id="role" required>
+            <option value="sucursal">Sucursal</option>
+            <option value="repartidor">Repartidor</option>
+            <option value="admin">Administrador</option>
+          </select>
+        </div>
+        <div class="field" id="parent-field" style="display:none;">
+          <label for="parent_id">Sucursal a la que pertenece</label>
+          <select id="parent_id">
+            <option value="">Selecciona una sucursal...</option>
+          </select>
         </div>
         <div class="field">
-          <label for="address">Dirección</label>
-          <input type="text" id="address" />
-        </div>
-        <div class="field">
-          <label for="phone">Tel</label>
-          <input type="text" id="phone" />
-        </div>
-        <div class="field">
-          <label for="email">Correo</label>
-          <input type="email" id="email" />
+          <label for="city">Ciudad</label>
+          <input type="text" id="city" list="py-cities" placeholder="Buscar ciudad..." autocomplete="off" />
+          <datalist id="py-cities"></datalist>
         </div>
         <div class="form-actions">
-          <button type="submit" class="btn btn-dark" id="save-btn">Guardar Cliente</button>
+          <button type="submit" class="btn btn-dark" id="save-btn">Guardar Usuario</button>
         </div>
       </form>
     </div>
   </main>
 
-  <script type="module" src="js/new-client.js"></script>
+  <script type="module" src="js/new-usuario.js"></script>
 </body>
 </html>

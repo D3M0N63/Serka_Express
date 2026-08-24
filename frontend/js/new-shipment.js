@@ -9,8 +9,8 @@ const errorBanner = document.getElementById("error-banner");
 const pendingCode = document.getElementById("pending-code");
 const formTitle = document.getElementById("form-title");
 const costInput = document.getElementById("cost");
+const quantityInput = document.getElementById("package_quantity");
 const totalInput = document.getElementById("total");
-const printBtn = document.getElementById("print-btn");
 const saveBtn = document.getElementById("save-btn");
 const originInput = document.getElementById("origin");
 const citiesList = document.getElementById("py-cities");
@@ -145,7 +145,6 @@ const recipientClient = wireClientSection("recipient");
 
 const params = new URLSearchParams(window.location.search);
 const editCode = params.get("code");
-let savedCode = editCode || null;
 
 if (editCode) {
   formTitle.childNodes[0].textContent = "Editar Envío ";
@@ -156,6 +155,22 @@ if (editCode) {
   const currentUser = getUser();
   if (currentUser?.city) {
     originInput.value = currentUser.city;
+  }
+  checkCajaAbierta();
+}
+
+// Solo bloquea el registro de NUEVOS envios; editar uno existente no
+// requiere caja abierta.
+async function checkCajaAbierta() {
+  try {
+    const { session } = await api("/cash/current");
+    if (!session) {
+      errorBanner.textContent = "La caja está cerrada. Abrí la caja para registrar nuevos envíos.";
+      errorBanner.style.display = "block";
+      saveBtn.disabled = true;
+    }
+  } catch (err) {
+    console.error(err);
   }
 }
 
@@ -173,6 +188,7 @@ async function loadForEdit(code) {
     document.getElementById("recipient_phone").value = s.recipient_phone || "";
     document.getElementById("recipient_email").value = s.recipient_email || "";
     document.getElementById("package_type").value = s.package_type || "Paquete";
+    document.getElementById("package_quantity").value = s.package_quantity || 1;
     originInput.value = s.origin || "";
     document.getElementById("destination").value = s.destination || "";
     costInput.value = s.cost || 0;
@@ -181,6 +197,22 @@ async function loadForEdit(code) {
     syncTotal();
     senderClient.refreshButtonVisibility();
     recipientClient.refreshButtonVisibility();
+
+    // Un usuario que no es Admin solo puede editar Remitente y
+    // Destinatario; el resto queda bloqueado (el backend tambien lo aplica
+    // aunque se fuerce el form).
+    if (getUser()?.role !== "admin") {
+      costInput.disabled = true;
+      document.getElementById("payment_method").disabled = true;
+      document.getElementById("payment_reference").disabled = true;
+      document.getElementById("payment-lock-hint").style.display = "block";
+      document.getElementById("package_type").disabled = true;
+      quantityInput.disabled = true;
+      originInput.disabled = true;
+      document.getElementById("destination").disabled = true;
+      document.getElementById("details-lock-hint").style.display = "block";
+      document.getElementById("origin-dest-lock-hint").style.display = "block";
+    }
   } catch (err) {
     errorBanner.textContent = err.message;
     errorBanner.style.display = "block";
@@ -189,9 +221,11 @@ async function loadForEdit(code) {
 
 function syncTotal() {
   const cost = Math.round(Number(costInput.value)) || 0;
-  totalInput.value = `₲ ${cost.toLocaleString("es-PY")}`;
+  const quantity = Math.max(1, Math.round(Number(quantityInput.value)) || 1);
+  totalInput.value = `₲ ${(cost * quantity).toLocaleString("es-PY")}`;
 }
 costInput.addEventListener("input", syncTotal);
+quantityInput.addEventListener("input", syncTotal);
 syncTotal();
 
 form.addEventListener("submit", async (e) => {
@@ -210,10 +244,10 @@ form.addEventListener("submit", async (e) => {
     recipient_phone: document.getElementById("recipient_phone").value.trim(),
     recipient_email: document.getElementById("recipient_email").value.trim(),
     package_type: document.getElementById("package_type").value,
+    package_quantity: Math.max(1, Math.round(Number(document.getElementById("package_quantity").value)) || 1),
     origin: originInput.value.trim(),
     destination: document.getElementById("destination").value.trim(),
     cost: Math.round(Number(costInput.value)) || 0,
-    total: Math.round(Number(costInput.value)) || 0,
     payment_method: document.getElementById("payment_method").value,
     payment_reference: document.getElementById("payment_reference").value.trim(),
   };
@@ -225,7 +259,6 @@ form.addEventListener("submit", async (e) => {
     const { shipment } = editCode
       ? await api(`/shipments/${encodeURIComponent(editCode)}`, { method: "PUT", body: payload })
       : await api("/shipments", { method: "POST", body: payload });
-    savedCode = shipment.code;
     window.location.href = `detail.html?code=${encodeURIComponent(shipment.code)}&${editCode ? "updated" : "created"}=1`;
   } catch (err) {
     errorBanner.textContent = err.message;
@@ -233,13 +266,4 @@ form.addEventListener("submit", async (e) => {
     saveBtn.disabled = false;
     saveBtn.textContent = editCode ? "Guardar Cambios" : "Guardar Registro de Envío";
   }
-});
-
-printBtn.addEventListener("click", () => {
-  if (!savedCode) {
-    errorBanner.textContent = "Guarda el envío primero para poder imprimir la etiqueta.";
-    errorBanner.style.display = "block";
-    return;
-  }
-  window.location.href = `detail.html?code=${encodeURIComponent(savedCode)}&print=1`;
 });

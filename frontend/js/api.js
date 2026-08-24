@@ -30,6 +30,15 @@ export function requireAuth() {
   }
 }
 
+// Para pantallas restringidas por rol (ej. Caja: Admin/Sucursal; Usuarios:
+// solo Admin). Debe llamarse despues de requireAuth().
+export function requireRole(roles) {
+  const user = getUser();
+  if (!user || !roles.includes(user.role)) {
+    window.location.href = "dashboard.html";
+  }
+}
+
 export async function api(path, { method = "GET", body } = {}) {
   const headers = { "Content-Type": "application/json" };
   const token = getToken();
@@ -63,6 +72,7 @@ export function initTopbar() {
   if (user) {
     if (nameEl) nameEl.textContent = user.name;
     if (avatarEl) avatarEl.textContent = user.name.slice(0, 2).toUpperCase();
+    applyRoleVisibility(user.role);
   }
   const logoutBtn = document.querySelector("[data-logout]");
   if (logoutBtn) {
@@ -71,4 +81,17 @@ export function initTopbar() {
       window.location.href = "index.html";
     });
   }
+}
+
+// Un Repartidor no tiene caja propia (la suya la maneja su Sucursal), y la
+// gestion de usuarios es exclusiva de Admin.
+function applyRoleVisibility(role) {
+  const cajaLink = document.querySelector('.subnav-link[href="caja.html"]');
+  if (cajaLink && role === "repartidor") cajaLink.style.display = "none";
+
+  const usersLink = document.querySelector('.subnav-link[href="usuarios.html"]');
+  if (usersLink && role !== "admin") usersLink.style.display = "none";
+
+  const closuresLink = document.querySelector('.subnav-link[href="cierres.html"]');
+  if (closuresLink && role !== "admin") closuresLink.style.display = "none";
 }

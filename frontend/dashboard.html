@@ -33,15 +33,22 @@
   <nav class="subnav">
     <a href="dashboard.html" class="subnav-link active">Inicio</a>
     <a href="shipments.html" class="subnav-link">Envíos</a>
+    <a href="planilla.html" class="subnav-link">Planilla</a>
     <a href="clients.html" class="subnav-link">Clientes</a>
-    <a href="caja.html" class="subnav-link">Caja</a>
     <a href="pagar.html" class="subnav-link">Pagar</a>
+    <a href="caja.html" class="subnav-link">Caja</a>
+    <a href="usuarios.html" class="subnav-link">Usuarios</a>
+    <a href="cierres.html" class="subnav-link">Cierres</a>
   </nav>
 
   <main class="page">
     <div class="page-header">
       <h1 class="page-title">Mis Envíos</h1>
-      <a href="new-shipment.html" class="btn btn-primary">+ Registro de Envío</a>
+      <a href="new-shipment.html" class="btn btn-primary" id="new-shipment-link">+ Registro de Envío</a>
+    </div>
+
+    <div class="warning-banner" id="caja-cerrada-banner">
+      La caja está cerrada. Abrí la caja para registrar nuevos envíos.
     </div>
 
     <div class="stats-row" id="stats-row"></div>
@@ -67,7 +74,7 @@
           <tbody id="shipments-body"></tbody>
         </table>
         <div class="empty-state" id="empty-state" style="display:none;">
-          Todavía no registraste ningún envío.
+          Todavía no registraste ningún envío hoy.
         </div>
       </div>
       <div class="pager" id="pager"></div>

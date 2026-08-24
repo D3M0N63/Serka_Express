@@ -1,5 +1,6 @@
 import { neon } from "@neondatabase/serverless";
 import { hashPassword } from "./auth.js";
+import { PY_DEPARTMENTS } from "../../../frontend/js/py-cities.js";
 
 if (!process.env.DATABASE_URL) {
   throw new Error(
@@ -41,6 +42,10 @@ async function initSchema() {
   // Migra usuarios creados antes de que existiera la columna `city`.
   await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS city TEXT`;
 
+  // parent_id: para usuarios "repartidor", indica a que usuario "sucursal"
+  // pertenecen (su caja se contabiliza dentro de la caja de esa sucursal).
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS parent_id INTEGER REFERENCES users(id)`;
+
   await sql`
     CREATE TABLE IF NOT EXISTS shipments (
       id SERIAL PRIMARY KEY,
@@ -60,6 +65,7 @@ async function initSchema() {
       package_value INTEGER DEFAULT 0,
       origin TEXT,
       destination TEXT,
+      destination_department TEXT,
       pickup_at_home BOOLEAN DEFAULT false,
       cost INTEGER DEFAULT 0,
       total INTEGER DEFAULT 0,
@@ -88,6 +94,45 @@ async function initSchema() {
   await sql`
     UPDATE shipments SET paid_at = created_at
     WHERE paid_at IS NULL AND payment_method IN ('Efectivo', 'Transferencia')
+  `;
+
+  // Migra envios creados antes de que existiera `destination_department`
+  // (usado para filtrar la Planilla por departamento de destino).
+  await sql`ALTER TABLE shipments ADD COLUMN IF NOT EXISTS destination_department TEXT`;
+  await backfillDestinationDepartments();
+
+  // Nombre de quien recibio el envio al marcarlo Entregado (el
+  // destinatario registrado, u otra persona indicada a mano).
+  await sql`ALTER TABLE shipments ADD COLUMN IF NOT EXISTS received_by TEXT`;
+
+  // Cantidad de bultos/paquetes que componen el envio (campo de
+  // "Detalles del Envio").
+  await sql`ALTER TABLE shipments ADD COLUMN IF NOT EXISTS package_quantity INTEGER DEFAULT 1`;
+
+  // Planillas: hojas de ruta con numeracion propia (P000001, P000002, ...)
+  // que agrupan las boletas seleccionadas para despacho. Al crear una
+  // planilla, las boletas seleccionadas quedan vinculadas via manifest_id.
+  await sql`
+    CREATE TABLE IF NOT EXISTS manifests (
+      id SERIAL PRIMARY KEY,
+      code TEXT GENERATED ALWAYS AS ('P' || LPAD(id::text, 6, '0')) STORED UNIQUE,
+      created_by INTEGER REFERENCES users(id),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+  await sql`ALTER TABLE shipments ADD COLUMN IF NOT EXISTS manifest_id INTEGER REFERENCES manifests(id)`;
+
+  // Historial de cambios de estado: quien marco cada paso del flujo
+  // (Registrado/En transito/En reparto/Entregado/Cancelado) y cuando, para
+  // mostrarlo en la linea de tiempo del detalle de la boleta.
+  await sql`
+    CREATE TABLE IF NOT EXISTS shipment_status_history (
+      id SERIAL PRIMARY KEY,
+      shipment_id INTEGER NOT NULL REFERENCES shipments(id),
+      status TEXT NOT NULL,
+      changed_by INTEGER REFERENCES users(id),
+      changed_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
   `;
 
   await sql`
@@ -180,4 +225,28 @@ async function migrateSequentialCodes() {
 
   await sql`ALTER TABLE shipments DROP COLUMN IF EXISTS code`;
   await sql`ALTER TABLE shipments ADD COLUMN code TEXT GENERATED ALWAYS AS (LPAD(id::text, 6, '0')) STORED UNIQUE`;
+}
+
+// Completa destination_department para envios existentes que tengan un
+// destino que coincide con una ciudad conocida pero todavia no tengan el
+// departamento calculado (p.ej. creados antes de que existiera este campo).
+// Recalcula siempre (no solo si esta en null): si la lista de
+// departamentos/ciudades que trabaja la empresa cambia, esto vuelve a
+// sincronizar los envios existentes con la lista actual.
+// Una consulta por departamento (no por envio): con miles de envios esto
+// son ~6 consultas en vez de miles, evitando timeouts en el arranque.
+async function backfillDestinationDepartments() {
+  for (const dept of PY_DEPARTMENTS) {
+    await sql`
+      UPDATE shipments SET destination_department = ${dept.name}
+      WHERE destination = ANY(${dept.cities})
+        AND destination_department IS DISTINCT FROM ${dept.name}
+    `;
+  }
+  const knownCities = PY_DEPARTMENTS.flatMap((d) => d.cities);
+  await sql`
+    UPDATE shipments SET destination_department = NULL
+    WHERE destination_department IS NOT NULL
+      AND NOT (destination = ANY(${knownCities}))
+  `;
 }

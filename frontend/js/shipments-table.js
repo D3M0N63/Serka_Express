@@ -1,4 +1,4 @@
-import { api } from "./api.js";
+import { api, getUser } from "./api.js";
 import { statusClass, formatDate, formatMoney } from "./status.js";
 
 const ICON_EDIT = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`;
@@ -16,6 +16,7 @@ export function renderStats(el, stats) {
 export function renderShipmentsTable({ tbody, emptyState, shipments, onChange }) {
   tbody.innerHTML = "";
   emptyState.style.display = shipments.length ? "none" : "block";
+  const isAdmin = getUser()?.role === "admin";
 
   for (const s of shipments) {
     const tr = document.createElement("tr");
@@ -30,7 +31,7 @@ export function renderShipmentsTable({ tbody, emptyState, shipments, onChange })
       <td data-label="Acciones">
         <div class="row-actions">
           <button type="button" class="icon-btn edit-btn" title="Editar">${ICON_EDIT}</button>
-          <button type="button" class="icon-btn danger delete-btn" title="Eliminar">${ICON_DELETE}</button>
+          ${isAdmin ? `<button type="button" class="icon-btn danger delete-btn" title="Eliminar">${ICON_DELETE}</button>` : ""}
         </div>
       </td>
     `;
@@ -41,10 +42,13 @@ export function renderShipmentsTable({ tbody, emptyState, shipments, onChange })
       e.stopPropagation();
       window.location.href = `new-shipment.html?code=${encodeURIComponent(s.code)}`;
     });
-    tr.querySelector(".delete-btn").addEventListener("click", (e) => {
-      e.stopPropagation();
-      deleteShipment(s.code, onChange);
-    });
+    const deleteBtn = tr.querySelector(".delete-btn");
+    if (deleteBtn) {
+      deleteBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        deleteShipment(s.code, onChange);
+      });
+    }
     tbody.appendChild(tr);
   }
 }

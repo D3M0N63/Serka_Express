@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Serka Express - Envíos</title>
+  <title>Serka Express - Cierres de Caja</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -32,51 +32,66 @@
 
   <nav class="subnav">
     <a href="dashboard.html" class="subnav-link">Inicio</a>
-    <a href="shipments.html" class="subnav-link active">Envíos</a>
+    <a href="shipments.html" class="subnav-link">Envíos</a>
     <a href="planilla.html" class="subnav-link">Planilla</a>
     <a href="clients.html" class="subnav-link">Clientes</a>
     <a href="pagar.html" class="subnav-link">Pagar</a>
     <a href="caja.html" class="subnav-link">Caja</a>
     <a href="usuarios.html" class="subnav-link">Usuarios</a>
-    <a href="cierres.html" class="subnav-link">Cierres</a>
+    <a href="cierres.html" class="subnav-link active">Cierres</a>
   </nav>
 
   <main class="page">
     <div class="page-header">
-      <h1 class="page-title">Todos los Envíos</h1>
-      <a href="new-shipment.html" class="btn btn-primary">+ Registro de Envío</a>
+      <h1 class="page-title">Cierres de Caja</h1>
     </div>
 
-    <div class="stats-row" id="stats-row"></div>
+    <div class="error-banner" id="error-banner"></div>
 
-    <div class="card">
-      <div class="toolbar">
-        <input type="text" id="search" placeholder="Buscar por código, nombre o CI/RUC..." />
+    <div class="view-tabs no-print">
+      <button type="button" class="view-tab" id="tab-week">Semana</button>
+      <button type="button" class="view-tab active" id="tab-month">Mes</button>
+      <button type="button" class="view-tab" id="tab-year">Año</button>
+      <button type="button" class="view-tab" id="tab-all">Todo</button>
+    </div>
+
+    <div class="card" id="period-nav-card" style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+      <button type="button" class="btn btn-outline btn-sm" id="period-prev">&lsaquo; Anterior</button>
+      <div id="period-label" style="font-weight:700; font-size:16px;"></div>
+      <div style="display:flex; gap:8px;">
+        <button type="button" class="btn btn-outline btn-sm" id="period-today">Actual</button>
+        <button type="button" class="btn btn-outline btn-sm" id="period-next">Siguiente &rsaquo;</button>
       </div>
+    </div>
+
+    <div class="stats-row" id="stats-row" style="margin-top:22px;"></div>
+
+    <div class="card" style="margin-top:24px;">
+      <h2 class="card-title">Cierres del periodo</h2>
       <div id="table-wrap" class="table-wrap">
         <table class="shipments">
           <thead>
             <tr>
-              <th>Código</th>
-              <th>Remitente</th>
-              <th>Destinatario</th>
-              <th>Origen &rarr; Destino</th>
-              <th>Estado</th>
-              <th>Total</th>
-              <th>Fecha</th>
-              <th></th>
+              <th>Sucursal</th>
+              <th>Apertura</th>
+              <th>Cierre</th>
+              <th>Inicial</th>
+              <th>Esperado</th>
+              <th>Contado</th>
+              <th>Diferencia</th>
+              <th>Transferencias</th>
             </tr>
           </thead>
-          <tbody id="shipments-body"></tbody>
+          <tbody id="sessions-body"></tbody>
         </table>
         <div class="empty-state" id="empty-state" style="display:none;">
-          Busca por código, nombre o CI/RUC para ver los envíos.
+          No hay cierres de caja en este periodo.
         </div>
       </div>
       <div class="pager" id="pager"></div>
     </div>
   </main>
 
-  <script type="module" src="js/shipments.js"></script>
+  <script type="module" src="js/cierres.js"></script>
 </body>
 </html>

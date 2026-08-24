@@ -1,8 +1,9 @@
-import { api, requireAuth, initTopbar } from "./api.js";
+import { api, requireAuth, requireRole, initTopbar } from "./api.js";
 import { formatDate, formatMoney } from "./status.js";
 import { createPager } from "./pager.js";
 
 requireAuth();
+requireRole(["admin", "sucursal"]);
 initTopbar();
 
 const content = document.getElementById("caja-content");
@@ -134,9 +135,15 @@ function renderOpenSession(session, summary) {
         </div>
       </div>
     </div>
+
+    <div class="card" style="margin-top:24px;">
+      <h2 class="card-title">Envíos Cobrados en esta Caja</h2>
+      <div id="shipment-income-list"></div>
+    </div>
   `;
 
   renderMovements(summary.movements);
+  renderShipmentIncome(summary.shipmentIncome);
 
   document.getElementById("add-mov-btn").addEventListener("click", async (e) => {
     errorBanner.style.display = "none";
@@ -174,6 +181,28 @@ function renderOpenSession(session, summary) {
       btn.textContent = "Cerrar Caja";
     }
   });
+}
+
+function renderShipmentIncome(shipmentIncome) {
+  const list = document.getElementById("shipment-income-list");
+  if (!shipmentIncome.length) {
+    list.innerHTML = `<p class="hint" style="text-align:left;">Todavía no se cobró ningún envío en esta caja.</p>`;
+    return;
+  }
+  list.innerHTML = shipmentIncome
+    .map(
+      (s) => `
+    <div class="info-row">
+      <span class="info-label">
+        <span class="badge ${s.payment_method === "Efectivo" ? "badge-entregado" : "badge-reparto"}">${s.payment_method}</span>
+        <a href="detail.html?code=${encodeURIComponent(s.code)}">${s.code}</a>
+        &middot; ${s.sender_name} &rarr; ${s.recipient_name}
+      </span>
+      <span class="info-value">${formatMoney(s.total)}</span>
+    </div>
+  `
+    )
+    .join("");
 }
 
 function renderMovements(movements) {

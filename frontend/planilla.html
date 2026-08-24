@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Serka Express - Planilla</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="manifest-print-page">
+  <header class="topbar">
+    <div class="topbar-left">
+      <a href="dashboard.html" class="brand">
+        <svg class="logo-mark" viewBox="0 0 40 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M37 3C25 3 12 9 4 18C12 27 25 33 37 33" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+          <path d="M30 8C21 8 11 12.5 6 18C11 23.5 21 28 30 28" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+          <path d="M23 13C17 13 10 15.5 8 18C10 20.5 17 23 23 23" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+        </svg>
+        <div>
+          <div class="logo">SERKA <span class="express">EXPRESS</span></div>
+          <span class="logo-sub">COURRIER &middot; TODO A TIEMPO</span>
+        </div>
+      </a>
+    </div>
+    <div class="topbar-right">
+      <a href="profile.html" class="profile-link">
+        <div class="avatar" data-user-avatar>AE</div>
+        <span class="name" data-user-name>Usuario</span>
+      </a>
+      <button class="logout-btn" data-logout>Salir</button>
+    </div>
+  </header>
+
+  <nav class="subnav">
+    <a href="dashboard.html" class="subnav-link">Inicio</a>
+    <a href="shipments.html" class="subnav-link">Envíos</a>
+    <a href="planilla.html" class="subnav-link active">Planilla</a>
+    <a href="clients.html" class="subnav-link">Clientes</a>
+    <a href="pagar.html" class="subnav-link">Pagar</a>
+    <a href="caja.html" class="subnav-link">Caja</a>
+    <a href="usuarios.html" class="subnav-link">Usuarios</a>
+    <a href="cierres.html" class="subnav-link">Cierres</a>
+  </nav>
+
+  <main class="page">
+    <div class="page-header">
+      <h1 class="page-title">Planilla de Envíos</h1>
+      <div class="header-actions">
+        <button type="button" class="btn" id="create-manifest-btn" disabled>Crear Planilla (<span id="selected-count">0</span>)</button>
+        <button type="button" class="btn" id="dispatch-manifest-btn" style="display:none;" disabled>Marcar En Reparto (<span id="dispatch-count">0</span>)</button>
+        <button type="button" class="btn btn-primary" id="print-btn">Imprimir Planilla</button>
+      </div>
+    </div>
+
+    <div class="view-tabs no-print">
+      <button type="button" class="view-tab active" id="tab-boletas">Boletas</button>
+      <button type="button" class="view-tab" id="tab-planillas">Planillas</button>
+    </div>
+
+    <div class="error-banner no-print" id="error-banner"></div>
+
+    <div class="card no-print" id="search-card" style="display:none;">
+      <h2 class="card-title">Buscar planilla por código</h2>
+      <div class="toolbar">
+        <input type="text" id="manifest-search" placeholder="Código de planilla (ej. P000001)..." />
+        <button type="button" class="btn" id="manifest-search-btn">Buscar</button>
+      </div>
+    </div>
+
+    <div class="card no-print" id="manifests-list-card" style="display:none;">
+      <div class="toolbar">
+        <div class="field" style="flex:1; min-width:220px;">
+          <label for="manifests-filter-city">Filtrar por ciudad de destino</label>
+          <select id="manifests-filter-city">
+            <option value="">Todas las ciudades</option>
+          </select>
+        </div>
+      </div>
+      <div id="manifests-table-wrap" class="table-wrap">
+        <table class="shipments">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Fecha</th>
+              <th>Boletas</th>
+              <th>Destino</th>
+              <th>Creado por</th>
+            </tr>
+          </thead>
+          <tbody id="manifests-list-body"></tbody>
+        </table>
+        <div class="empty-state" id="manifests-empty-state" style="display:none;">
+          Todavía no se creó ninguna planilla.
+        </div>
+      </div>
+      <div class="pager" id="manifests-pager"></div>
+    </div>
+
+    <div class="card no-print" id="viewing-manifest-banner" style="display:none; margin-top:16px;">
+      Viendo planilla <strong id="viewing-manifest-code"></strong> &mdash; <span id="viewing-manifest-count"></span> boleta(s)
+      <button type="button" class="btn" id="back-to-filters-btn" style="margin-left:12px;">Volver</button>
+    </div>
+
+    <div class="card no-print" id="filters-card">
+      <h2 class="card-title">Filtros</h2>
+      <div class="grid-3">
+        <div class="field">
+          <label for="filter-date">Fecha</label>
+          <input type="date" id="filter-date" />
+        </div>
+        <div class="field">
+          <label for="filter-department">Departamento (destino)</label>
+          <select id="filter-department">
+            <option value="">Todos los departamentos</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="filter-city">Ciudad (destino)</label>
+          <select id="filter-city">
+            <option value="">Todas las ciudades</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card no-print" id="results-card" style="margin-top:24px;">
+      <div id="table-wrap" class="table-wrap">
+        <table class="shipments">
+          <thead>
+            <tr>
+              <th><input type="checkbox" id="select-all" /></th>
+              <th>Código</th>
+              <th>Remitente</th>
+              <th>Destinatario</th>
+              <th>Destino</th>
+              <th>Total</th>
+              <th>Pago</th>
+              <th>Estado</th>
+              <th>Hora</th>
+            </tr>
+          </thead>
+          <tbody id="manifest-body"></tbody>
+        </table>
+        <div class="empty-state" id="empty-state" style="display:none;">
+          No hay envíos para esta fecha y filtros.
+        </div>
+      </div>
+    </div>
+
+    <div id="print-manifest" class="print-manifest"></div>
+  </main>
+
+  <script type="module" src="js/planilla.js"></script>
+</body>
+</html>
