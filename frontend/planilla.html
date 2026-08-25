@@ -5,6 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Serka Express - Planilla</title>
   <link rel="stylesheet" href="css/style.css" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#ffde02" />
+  <link rel="icon" href="icons/icon-32.png" sizes="32x32" type="image/png" />
+  <link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png" />
+  <link rel="apple-touch-icon" href="icons/icon-180.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Serka Express" />
 </head>
 <body class="manifest-print-page">
   <header class="topbar">
@@ -123,6 +131,9 @@
     </div>
 
     <div class="card no-print" id="results-card" style="margin-top:24px;">
+      <label class="mobile-select-all">
+        <input type="checkbox" id="select-all-mobile" /> Seleccionar todo
+      </label>
       <div id="table-wrap" class="table-wrap">
         <table class="shipments">
           <thead>
@@ -150,5 +161,6 @@
   </main>
 
   <script type="module" src="js/planilla.js"></script>
+  <script type="module" src="js/pwa.js"></script>
 </body>
 </html>

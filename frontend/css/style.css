@@ -986,6 +986,24 @@ table.shipments tr:hover td {
   }
 }
 
+/* El checkbox "Seleccionar todo" vive en el <thead>, que se oculta en mobile
+   (arriba). Este control lo reemplaza fuera de la tabla para no perder la
+   funcionalidad en boletas/planillas. */
+.mobile-select-all {
+  display: none;
+}
+
+@media (max-width: 700px) {
+  .mobile-select-all {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 14px;
+  }
+}
+
 .badge {
   display: inline-block;
   padding: 4px 10px;

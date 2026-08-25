@@ -15,6 +15,7 @@ const errorBanner = document.getElementById("error-banner");
 const printBtn = document.getElementById("print-btn");
 const printManifest = document.getElementById("print-manifest");
 const selectAllCheckbox = document.getElementById("select-all");
+const selectAllMobileCheckbox = document.getElementById("select-all-mobile");
 const createManifestBtn = document.getElementById("create-manifest-btn");
 const selectedCountEl = document.getElementById("selected-count");
 const dispatchManifestBtn = document.getElementById("dispatch-manifest-btn");
@@ -258,12 +259,14 @@ async function dispatchManifest() {
 function renderTable(shipments, { selectableStatus }) {
   body.innerHTML = "";
   emptyState.style.display = shipments.length ? "none" : "block";
+  selectAllCheckbox.checked = false;
+  selectAllMobileCheckbox.checked = false;
 
   for (const s of shipments) {
     const canSelect = s.status === selectableStatus;
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td data-label="">${
+      <td data-label="${canSelect ? "Seleccionar" : ""}">${
         canSelect
           ? `<input type="checkbox" class="row-select" data-code="${s.code}" />`
           : ""
@@ -371,15 +374,19 @@ backToFiltersBtn.addEventListener("click", closeManifestView);
 tabBoletasBtn.addEventListener("click", () => switchTab("boletas"));
 tabPlanillasBtn.addEventListener("click", () => switchTab("planillas"));
 manifestsFilterCity.addEventListener("change", () => loadManifestsList(1));
-selectAllCheckbox.addEventListener("change", () => {
+function applySelectAll(checked) {
   const boxes = body.querySelectorAll(".row-select");
   for (const box of boxes) {
-    box.checked = selectAllCheckbox.checked;
-    if (selectAllCheckbox.checked) selectedCodes.add(box.dataset.code);
+    box.checked = checked;
+    if (checked) selectedCodes.add(box.dataset.code);
     else selectedCodes.delete(box.dataset.code);
   }
+  selectAllCheckbox.checked = checked;
+  selectAllMobileCheckbox.checked = checked;
   updateSelectionUI();
-});
+}
+selectAllCheckbox.addEventListener("change", () => applySelectAll(selectAllCheckbox.checked));
+selectAllMobileCheckbox.addEventListener("change", () => applySelectAll(selectAllMobileCheckbox.checked));
 
 updatePanels();
 load().catch((err) => {
