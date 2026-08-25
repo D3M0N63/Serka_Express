@@ -8,5 +8,8 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4"
+  },
+  "devDependencies": {
+    "netlify-cli": "^27.3.0"
   }
 }

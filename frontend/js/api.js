@@ -52,7 +52,7 @@ export async function api(path, { method = "GET", body } = {}) {
 
   const data = await res.json().catch(() => ({}));
 
-  if (res.status === 401) {
+  if (res.status === 401 && path !== "/auth/login") {
     clearSession();
     window.location.href = "index.html";
     throw new Error("No autorizado");
