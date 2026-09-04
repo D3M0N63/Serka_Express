@@ -619,7 +619,7 @@ function buildTicketHtml(s, withSignatures) {
       <div class="ticket-signatures">
         <div class="sig-top">
           <div class="sig-line"></div>
-          <div class="sig-label">Firma</div>
+          <div class="sig-label">Firma del Cliente</div>
         </div>
         <div class="sig-bottom">
           <div class="sig-col">
@@ -638,43 +638,46 @@ function buildTicketHtml(s, withSignatures) {
   return `
     <div class="ticket">
       <div class="ticket-header">
-        <div class="ticket-title">* SERKA EXPRESS *</div>
-        <div class="ticket-sub">COURRIER &middot; TODO A TIEMPO</div>
+        <div class="ticket-title">SERKA EXPRESS</div>
+        <div class="ticket-sub">COURRIER - TODO A TIEMPO</div>
       </div>
-      <div class="ticket-meta">
-        <span>${formatDate(s.created_at)}</span>
-        <span>Envío: ${s.code}</span>
+
+      <div class="ticket-block">
+        ${ticketLine("Nro de Guía", s.code, { boldValue: true })}
+        ${ticketLine("Fecha", formatDate(s.created_at))}
       </div>
-      <div class="ticket-rule"></div>
-      <div class="ticket-section">REMITENTE</div>
-      ${ticketRow("Nombre", s.sender_name)}
-      ${ticketRow("CI/RUC", s.sender_dni)}
-      ${ticketRow("Dirección", s.sender_address)}
-      ${ticketRow("Tel", s.sender_phone)}
-      <div class="ticket-rule"></div>
-      <div class="ticket-section">DESTINATARIO</div>
-      ${ticketRow("Nombre", s.recipient_name)}
-      ${ticketRow("CI/RUC", s.recipient_dni)}
-      ${ticketRow("Dirección", s.recipient_address)}
-      ${ticketRow("Tel", s.recipient_phone)}
-      <div class="ticket-rule"></div>
-      <div class="ticket-section">ENVÍO</div>
-      ${ticketRow("Tipo", s.package_type)}
-      ${ticketRow("Cantidad", s.package_quantity)}
-      ${ticketRow("Origen", s.origin)}
-      ${ticketRow("Destino", s.destination)}
-      ${ticketRow("Estado", s.status)}
-      ${ticketRow("Pago", s.payment_method)}
-      <div class="ticket-rule"></div>
-      <div class="ticket-total">
-        <span>A PAGAR</span>
+
+      <div class="ticket-block">
+        ${ticketLine("Remitente", s.sender_name)}
+        ${ticketLine("CI/RUC", s.sender_dni)}
+        ${ticketLine("Dirección", s.sender_address)}
+        ${ticketLine("Tel", s.sender_phone)}
+        ${ticketLine("Origen", s.origin)}
+      </div>
+
+      <div class="ticket-block">
+        ${ticketLine("Destinatario", s.recipient_name)}
+        ${ticketLine("CI/RUC", s.recipient_dni)}
+        ${ticketLine("Dirección", s.recipient_address)}
+        ${ticketLine("Tel", s.recipient_phone)}
+        ${ticketLine("Destino", s.destination)}
+      </div>
+
+      <div class="ticket-block">
+        ${ticketLine("Tipo", s.package_type)}
+        ${ticketLine("Cantidad", s.package_quantity)}
+        ${ticketLine("Estado", s.status)}
+        ${ticketLine("Forma de pago", s.payment_method)}
+      </div>
+
+      <div class="ticket-total-row">
+        <span>TOTAL</span>
         <span>${formatMoney(s.total)}</span>
       </div>
-      <div class="ticket-rule-double"></div>
+
       <div class="ticket-footer">¡Gracias por elegir Serka Express!</div>
       ${signatures}
       <div class="ticket-terms">
-        <div class="ticket-rule"></div>
         <ol class="terms-list">
           <li>En ningún caso la empresa será responsable por daños indirectos, especiales, incidentales.</li>
           <li>Es de exclusiva responsabilidad del remitente cualquier tipo de mercadería decomisada por las autoridades competentes por no contar con la documentación legal correspondiente o que infrinja alguna disposición legal, No transportamos, Explosivos, inflamables, baterías, armas de fuego.</li>
@@ -692,6 +695,7 @@ function buildTicketHtml(s, withSignatures) {
   `;
 }
 
-function ticketRow(label, value) {
-  return `<div class="ticket-row"><span>${label}</span><span>${value && value !== "" ? value : "-"}</span></div>`;
+function ticketLine(label, value, { boldValue = false } = {}) {
+  const text = value && value !== "" ? value : "-";
+  return `<div class="ticket-line"><span class="tl-label">${label}:</span> <span${boldValue ? ' class="tl-strong"' : ""}>${text}</span></div>`;
 }
