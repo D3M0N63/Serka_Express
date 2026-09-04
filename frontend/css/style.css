@@ -1184,12 +1184,12 @@ table.shipments tr:hover td {
 
 .ticket-rule {
   border-top: 1px dashed #000;
-  margin: 8px 0;
+  margin: 5px 0;
 }
 
 .ticket-rule-double {
   border-top: 3px double #000;
-  margin: 8px 0;
+  margin: 5px 0;
 }
 
 .ticket-section {
@@ -1225,21 +1225,21 @@ table.shipments tr:hover td {
 .ticket-footer {
   text-align: center;
   font-size: 11px;
-  margin-top: 10px;
+  margin-top: 5px;
   letter-spacing: 0.5px;
 }
 
 /* Firmas: una linea centrada arriba (Firma) y dos lineas abajo
    (Aclaracion / CI-Ruc), en formato triangular. */
 .ticket-signatures {
-  margin-top: 34px;
+  margin-top: 16px;
 }
 
 .sig-top {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 14px;
+  margin-bottom: 8px;
 }
 
 .sig-top .sig-line {
@@ -1270,11 +1270,13 @@ table.shipments tr:hover td {
   letter-spacing: 0.5px;
 }
 
-/* Condiciones de transporte: letra chica al pie del tique. */
+/* Condiciones de transporte: letra chica al pie del tique. Tamaño e
+   interlineado ajustados para que las 4 copias sigan entrando cada una
+   en su propia hoja de 260mm (ver @page en detail.js/setPrintMode). */
 .ticket-terms {
-  margin-top: 14px;
-  font-size: 8px;
-  line-height: 1.35;
+  margin-top: 6px;
+  font-size: 9.5px;
+  line-height: 1.15;
   text-align: left;
 }
 
@@ -1284,7 +1286,7 @@ table.shipments tr:hover td {
 }
 
 .terms-list li {
-  margin-bottom: 3px;
+  margin-bottom: 2px;
 }
 
 .terms-subtitle {
