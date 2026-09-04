@@ -1148,7 +1148,7 @@ table.shipments tr:hover td {
   padding: 3mm 0;
   color: #000;
   font-size: 12.5px;
-  line-height: 1.45;
+  line-height: 1.35;
 }
 
 /* Se imprimen 4 copias del ticket seguidas (ver renderTicket en
@@ -1158,16 +1158,21 @@ table.shipments tr:hover td {
   break-after: page;
 }
 
-/* Divisor punteado generico: usado en el ticket de cierre de caja y en
-   pantallas normales (ver caja.js), no en el ticket de envio impreso. */
+/* Divisor punteado: separa secciones del ticket, y tambien se usa como
+   divisor generico en el ticket de cierre de caja (ver caja.js). */
 .ticket-rule {
   border-top: 1px dashed #000;
-  margin: 5px 0;
+  margin: 4px 0;
+}
+
+.ticket-rule-double {
+  border-top: 3px double #000;
+  margin: 4px 0;
 }
 
 .ticket-header {
   text-align: left;
-  margin-bottom: 10px;
+  margin-bottom: 5px;
 }
 
 .ticket-title {
@@ -1181,52 +1186,61 @@ table.shipments tr:hover td {
   margin-top: 2px;
 }
 
-/* Cada bloque (datos de guia, remitente, destinatario, envio) se separa
-   de los demas con margen en vez de lineas punteadas. */
-.ticket-block {
-  margin-bottom: 10px;
-}
-
-.ticket-line {
+.ticket-meta {
+  display: flex;
+  justify-content: space-between;
   margin-bottom: 2px;
 }
 
-.ticket-line .tl-label {
-  font-weight: 600;
-}
-
-.ticket-line .tl-strong {
+.ticket-section {
   font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 2px;
 }
 
-.ticket-total-row {
+.ticket-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ticket-row span:first-child {
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.ticket-row span:last-child {
+  text-align: right;
+  word-break: break-word;
+}
+
+.ticket-total {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
   font-weight: 700;
   font-size: 16px;
-  border-top: 1px solid #000;
-  padding-top: 6px;
-  margin-bottom: 9px;
+  margin-top: 2px;
 }
 
 .ticket-footer {
   text-align: left;
   font-size: 11.5px;
-  margin-bottom: 7px;
+  margin-top: 4px;
 }
 
 /* Firmas: una linea centrada arriba (Firma) y dos lineas abajo
-   (Aclaracion / CI-Ruc), en formato triangular. */
+   (Aclaracion / CI-Ruc), en formato triangular. Los margenes se
+   ampliaron respecto al diseño anterior para separar bien cada campo. */
 .ticket-signatures {
-  margin-top: 20px;
+  margin-top: 28px;
 }
 
 .sig-top {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 9px;
+  margin-bottom: 22px;
 }
 
 .sig-top .sig-line {
@@ -1257,11 +1271,32 @@ table.shipments tr:hover td {
   letter-spacing: 0.5px;
 }
 
+/* Campo para anotar a mano la fecha de entrega, antes de las
+   condiciones de transporte. */
+.ticket-delivery {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 8px 0 5px;
+  font-size: 12px;
+}
+
+.ticket-delivery .dl-label {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.ticket-delivery .fill-line {
+  flex: 1;
+  border-bottom: 1px solid #000;
+  margin-bottom: 1px;
+}
+
 /* Condiciones de transporte: letra al pie del tique. Tamaño e
    interlineado ajustados para que las 4 copias sigan entrando cada una
    en su propia hoja de 260mm (ver @page en detail.js/setPrintMode). */
 .ticket-terms {
-  margin-top: 8px;
+  margin-top: 6px;
   font-size: 10.5px;
   line-height: 1.25;
   text-align: left;
@@ -1273,16 +1308,16 @@ table.shipments tr:hover td {
 }
 
 .terms-list li {
-  margin-bottom: 3px;
+  margin-bottom: 2px;
 }
 
 .terms-subtitle {
   font-weight: 700;
-  margin: 6px 0 3px;
+  margin: 4px 0 2px;
 }
 
 .terms-note {
-  margin-top: 5px;
+  margin-top: 3px;
   font-style: italic;
 }
 
