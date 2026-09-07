@@ -94,4 +94,7 @@ function applyRoleVisibility(role) {
 
   const closuresLink = document.querySelector('.subnav-link[href="cierres.html"]');
   if (closuresLink && role !== "admin") closuresLink.style.display = "none";
+
+  const creditLink = document.querySelector('.subnav-link[href="credito.html"]');
+  if (creditLink && role !== "admin") creditLink.style.display = "none";
 }

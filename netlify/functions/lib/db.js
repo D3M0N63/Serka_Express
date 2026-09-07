@@ -149,6 +149,27 @@ async function initSchema() {
     )
   `;
 
+  // Informes de credito (C000001, C000002, ...): agrupan las boletas con
+  // pago "Crédito" de una misma empresa (remitente) que se imprimen juntas
+  // en una hoja de cuenta corriente. paid_at != NULL marca el informe (y
+  // sus boletas) como cobrado; NULL = impreso pero todavia sin cobrar, se
+  // puede reimprimir y marcar como pagado despues.
+  await sql`
+    CREATE TABLE IF NOT EXISTS credit_reports (
+      id SERIAL PRIMARY KEY,
+      code TEXT GENERATED ALWAYS AS ('C' || LPAD(id::text, 6, '0')) STORED UNIQUE,
+      client_key TEXT NOT NULL,
+      client_name TEXT NOT NULL,
+      client_dni TEXT,
+      total INTEGER NOT NULL DEFAULT 0,
+      shipment_count INTEGER NOT NULL DEFAULT 0,
+      created_by INTEGER REFERENCES users(id),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      paid_at TIMESTAMPTZ
+    )
+  `;
+  await sql`ALTER TABLE shipments ADD COLUMN IF NOT EXISTS credit_report_id INTEGER REFERENCES credit_reports(id)`;
+
   await sql`
     CREATE TABLE IF NOT EXISTS cash_sessions (
       id SERIAL PRIMARY KEY,

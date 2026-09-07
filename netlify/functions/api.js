@@ -33,6 +33,13 @@ import {
   listAllSessions,
 } from "./lib/cash.js";
 import { listUsers, getUser, createUser, updateUser, deleteUser } from "./lib/users.js";
+import {
+  listCredits,
+  getCreditClient,
+  createCreditReport,
+  getCreditReport,
+  markCreditReportPaid,
+} from "./lib/credits.js";
 
 function json(status, data) {
   return new Response(JSON.stringify(data), {
@@ -194,6 +201,34 @@ export default async (req) => {
     if (clientMatch && method === "DELETE") {
       const { status, data } = await deleteClient(decodeURIComponent(clientMatch[1]));
       return json(status, data);
+    }
+
+    // Crédito: gestión de cuentas corrientes (boletas con pago "Crédito"
+    // agrupadas por empresa remitente). Exclusivo de Admin.
+    if (pathname.startsWith("/credits")) {
+      if (user.role !== "admin") return json(403, { error: "No autorizado" });
+
+      if (pathname === "/credits" && method === "GET") {
+        const { status, data } = await listCredits(query);
+        return json(status, data);
+      }
+      if (pathname === "/credits/client" && method === "GET") {
+        const { status, data } = await getCreditClient(query);
+        return json(status, data);
+      }
+      if (pathname === "/credits/reports" && method === "POST") {
+        const { status, data } = await createCreditReport(await safeJson(req), user);
+        return json(status, data);
+      }
+      const creditReportMatch = pathname.match(/^\/credits\/reports\/([^/]+)$/);
+      if (creditReportMatch && method === "GET") {
+        const { status, data } = await getCreditReport(decodeURIComponent(creditReportMatch[1]));
+        return json(status, data);
+      }
+      if (creditReportMatch && method === "PATCH") {
+        const { status, data } = await markCreditReportPaid(decodeURIComponent(creditReportMatch[1]));
+        return json(status, data);
+      }
     }
 
     // La caja de un Repartidor esta a cargo de su Sucursal: no tiene

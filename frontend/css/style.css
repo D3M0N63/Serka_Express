@@ -1134,6 +1134,23 @@ table.shipments tr:hover td {
     padding: 0;
     max-width: none;
   }
+
+  /* Crédito: al imprimir se oculta todo menos la hoja de cuenta corriente
+     (#print-doc); el resto de los controles ya usan .no-print. */
+  .credito-print-page .topbar,
+  .credito-print-page .subnav,
+  .credito-print-page .page-header,
+  .credito-print-page #list-view,
+  .credito-print-page #detail-view {
+    display: none !important;
+  }
+  .credito-print-page #print-doc {
+    display: block !important;
+  }
+  .credito-print-page .page {
+    padding: 0;
+    max-width: none;
+  }
 }
 
 /* ---------- Ticket de envío (imprimible) ---------- */
@@ -1379,6 +1396,103 @@ table.shipments tr:hover td {
 }
 
 .manifest-doc-footer div {
+  width: 45%;
+  border-top: 1px solid #000;
+  padding-top: 4px;
+  text-align: center;
+}
+
+/* ---------- Informe de crédito (hoja de cuenta corriente imprimible) ---------- */
+#print-doc {
+  display: none;
+}
+
+.credito-doc {
+  font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #000;
+  font-size: 12px;
+}
+
+.credito-doc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  border-bottom: 2px solid #000;
+  padding-bottom: 10px;
+  margin-bottom: 6px;
+}
+
+.credito-doc-title {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.credito-doc-client {
+  font-size: 14px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.credito-doc-meta {
+  text-align: right;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.credito-doc-stamp {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 10px;
+  border: 2px solid #000;
+  border-radius: 4px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.credito-doc-stamp.pending {
+  border-style: dashed;
+}
+
+.credito-doc table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 14px;
+}
+
+.credito-doc th,
+.credito-doc td {
+  border: 1px solid #999;
+  padding: 6px 8px;
+  text-align: left;
+  font-size: 11.5px;
+}
+
+.credito-doc th {
+  background: #eee;
+  text-transform: uppercase;
+  font-size: 10px;
+}
+
+.credito-doc td.num,
+.credito-doc th.num {
+  text-align: right;
+}
+
+.credito-doc tfoot td {
+  font-weight: 800;
+  font-size: 13px;
+  background: #f6f6f6;
+}
+
+.credito-doc-footer {
+  margin-top: 40px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+}
+
+.credito-doc-footer div {
   width: 45%;
   border-top: 1px solid #000;
   padding-top: 4px;
