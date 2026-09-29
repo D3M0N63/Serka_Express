@@ -45,14 +45,14 @@ export async function createShipment(body, user) {
       sender_name, sender_dni, sender_address, sender_phone, sender_email,
       recipient_name, recipient_dni, recipient_address, recipient_phone, recipient_email,
       package_type, package_content, package_value, package_quantity,
-      origin, destination, destination_department, pickup_at_home,
+      origin, destination, destination_responsible, destination_department, pickup_at_home,
       cost, total, payment_method, payment_reference,
       status, created_by, paid_at
     ) VALUES (
       ${body.sender_name}, ${body.sender_dni || null}, ${body.sender_address || null}, ${body.sender_phone || null}, ${body.sender_email || null},
       ${body.recipient_name}, ${body.recipient_dni || null}, ${body.recipient_address || null}, ${body.recipient_phone || null}, ${body.recipient_email || null},
       ${body.package_type || "Paquete"}, ${body.package_content || null}, ${packageValue}, ${packageQuantity},
-      ${body.origin || null}, ${body.destination || null}, ${destinationDepartment}, ${!!body.pickup_at_home},
+      ${body.origin || null}, ${body.destination || null}, ${body.destination_responsible || null}, ${destinationDepartment}, ${!!body.pickup_at_home},
       ${cost}, ${total}, ${paymentMethod}, ${body.payment_reference || null},
       'Registrado', ${user.id}, ${paidAt}
     )
@@ -201,6 +201,7 @@ export async function updateShipment(code, body, user) {
   let packageQuantity = existing.package_quantity;
   let origin = existing.origin;
   let destination = existing.destination;
+  let destinationResponsible = existing.destination_responsible;
   let destinationDepartment = existing.destination_department;
 
   if (isAdmin) {
@@ -214,6 +215,7 @@ export async function updateShipment(code, body, user) {
     packageQuantity = Math.max(1, Math.round(Number(body.package_quantity)) || 1);
     origin = body.origin || null;
     destination = body.destination || null;
+    destinationResponsible = body.destination_responsible || null;
     destinationDepartment = findDepartmentForCity(destination);
   }
 
@@ -230,7 +232,7 @@ export async function updateShipment(code, body, user) {
       recipient_address = ${body.recipient_address || null}, recipient_phone = ${body.recipient_phone || null},
       recipient_email = ${body.recipient_email || null},
       package_type = ${packageType}, package_quantity = ${packageQuantity},
-      origin = ${origin}, destination = ${destination},
+      origin = ${origin}, destination = ${destination}, destination_responsible = ${destinationResponsible},
       destination_department = ${destinationDepartment},
       cost = ${cost}, total = ${total},
       payment_method = ${paymentMethod}, payment_reference = ${paymentReference},

@@ -191,6 +191,7 @@ async function loadForEdit(code) {
     document.getElementById("package_quantity").value = s.package_quantity || 1;
     originInput.value = s.origin || "";
     document.getElementById("destination").value = s.destination || "";
+    document.getElementById("destination_responsible").value = s.destination_responsible || "";
     costInput.value = s.cost || 0;
     document.getElementById("payment_method").value = s.payment_method || "Efectivo";
     document.getElementById("payment_reference").value = s.payment_reference || "";
@@ -210,6 +211,7 @@ async function loadForEdit(code) {
       quantityInput.disabled = true;
       originInput.disabled = true;
       document.getElementById("destination").disabled = true;
+      document.getElementById("destination_responsible").disabled = true;
       document.getElementById("details-lock-hint").style.display = "block";
       document.getElementById("origin-dest-lock-hint").style.display = "block";
     }
@@ -247,6 +249,7 @@ form.addEventListener("submit", async (e) => {
     package_quantity: Math.max(1, Math.round(Number(document.getElementById("package_quantity").value)) || 1),
     origin: originInput.value.trim(),
     destination: document.getElementById("destination").value.trim(),
+    destination_responsible: document.getElementById("destination_responsible").value.trim(),
     cost: Math.round(Number(costInput.value)) || 0,
     payment_method: document.getElementById("payment_method").value,
     payment_reference: document.getElementById("payment_reference").value.trim(),

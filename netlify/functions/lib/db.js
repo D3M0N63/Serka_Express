@@ -200,6 +200,8 @@ async function initSchema() {
     )
   `;
 
+  await sql`ALTER TABLE shipments ADD COLUMN IF NOT EXISTS destination_responsible TEXT`;
+
   await migrateSequentialCodes();
 
   const [{ count }] = await sql`SELECT COUNT(*)::int AS count FROM users`;

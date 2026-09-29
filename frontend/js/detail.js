@@ -479,12 +479,12 @@ function buildTicketPdfDoc(s) {
   row("Origen", s.origin);
   row("Destino", s.destination);
   row("Estado", s.status);
-  row("Pago", s.payment_method);
+  row("Pago", paymentLabel(s.payment_method));
   rule();
 
   doc.setFont("courier", "bold");
   doc.setFontSize(11);
-  doc.text("A PAGAR", marginX, y);
+  doc.text(paymentLabel(s.payment_method).toUpperCase(), marginX, y);
   doc.text(formatMoneyForPdf(s.total), rightX, y, { align: "right" });
   y += 5;
   doc.setLineWidth(0.5);
@@ -583,7 +583,7 @@ function renderEtiquetas(s) {
         <div class="etq-row"><strong>Destino:</strong> ${(s.destination || "-").toUpperCase()}</div>
         <div class="etq-bottom-row">
           <span>${s.code}-${n}/${total}</span>
-          <span>${(s.payment_method || "-").toUpperCase()}</span>
+          <span>${paymentLabel(s.payment_method).toUpperCase()}</span>
         </div>
         <svg class="etq-barcode" id="etq-barcode-${n}"></svg>
       </div>
@@ -664,10 +664,10 @@ function buildTicketHtml(s, withSignatures) {
       ${ticketRow("Origen", s.origin)}
       ${ticketRow("Destino", s.destination)}
       ${ticketRow("Estado", s.status)}
-      ${ticketRow("Pago", s.payment_method)}
+      ${ticketRow("Pago", paymentLabel(s.payment_method))}
       <div class="ticket-rule"></div>
       <div class="ticket-total">
-        <span>A PAGAR</span>
+        <span>${paymentLabel(s.payment_method).toUpperCase()}</span>
         <span>${formatMoney(s.total)}</span>
       </div>
       <div class="ticket-rule-double"></div>
@@ -698,4 +698,12 @@ function buildTicketHtml(s, withSignatures) {
 
 function ticketRow(label, value) {
   return `<div class="ticket-row"><span>${label}</span><span>${value && value !== "" ? value : "-"}</span></div>`;
+}
+
+// Devuelve el texto de estado de pago para mostrar en el ticket según el
+// método de pago registrado en el envío.
+function paymentLabel(method) {
+  if (method === "Crédito") return "Crédito";
+  if (method === "A cobrar") return "A cobrar";
+  return "Pagado"; // Efectivo o Transferencia
 }
