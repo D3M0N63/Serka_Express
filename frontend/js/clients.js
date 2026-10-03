@@ -7,7 +7,14 @@ initTopbar();
 const body = document.getElementById("clients-body");
 const emptyState = document.getElementById("empty-state");
 const searchInput = document.getElementById("search");
+const typeFilter = document.getElementById("filter-type");
 const pagerEl = document.getElementById("pager");
+
+const TYPE_BADGE = {
+  Empresa: "badge-reparto",
+  Tienda: "badge-transito",
+  Casual: "badge-registrado",
+};
 
 const ICON_EDIT = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`;
 const ICON_DELETE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>`;
@@ -25,6 +32,7 @@ function renderTable(clients) {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td data-label="Nombre"><strong>${c.name}</strong></td>
+      <td data-label="Tipo"><span class="badge ${TYPE_BADGE[c.type] || "badge-registrado"}">${c.type || "Casual"}</span></td>
       <td data-label="CI/RUC">${c.dni || "-"}</td>
       <td data-label="Dirección">${c.address || "-"}</td>
       <td data-label="Tel">${c.phone || "-"}</td>
@@ -57,7 +65,8 @@ async function deleteClient(c) {
 async function load(page = 1) {
   currentPage = page;
   const q = searchInput.value.trim();
-  const qs = q ? `&q=${encodeURIComponent(q)}` : "";
+  const type = typeFilter.value;
+  const qs = (q ? `&q=${encodeURIComponent(q)}` : "") + (type ? `&type=${encodeURIComponent(type)}` : "");
   const { clients, total, pageSize } = await api(`/clients?page=${page}${qs}`);
   renderTable(clients);
   pager.update({ page, total, pageSize });
@@ -67,6 +76,7 @@ searchInput.addEventListener("input", () => {
   clearTimeout(debounceTimer);
   debounceTimer = setTimeout(() => load(1), 300);
 });
+typeFilter.addEventListener("change", () => load(1));
 
 load().catch((err) => {
   console.error(err);

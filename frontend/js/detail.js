@@ -198,6 +198,7 @@ function render(s, history) {
           ${infoRow("Costo", formatMoney(s.cost))}
           ${infoRow("Total", formatMoney(s.total))}
           ${infoRow("Pago", s.payment_method)}
+          ${s.payment_method === "A cobrar" ? infoRow("Valor a cobrar", formatMoney(s.package_value)) : ""}
           ${infoRow("Referencia", s.payment_reference)}
           ${infoRow("Registrado", formatDate(s.created_at))}
         </div>
@@ -480,6 +481,9 @@ function buildTicketPdfDoc(s) {
   row("Destino", s.destination);
   row("Estado", s.status);
   row("Pago", paymentLabel(s.payment_method));
+  if (s.payment_method === "A cobrar") {
+    row("Valor a cobrar", formatMoneyForPdf(s.package_value));
+  }
   rule();
 
   doc.setFont("courier", "bold");
@@ -665,6 +669,7 @@ function buildTicketHtml(s, withSignatures) {
       ${ticketRow("Destino", s.destination)}
       ${ticketRow("Estado", s.status)}
       ${ticketRow("Pago", paymentLabel(s.payment_method))}
+      ${s.payment_method === "A cobrar" ? ticketRow("Valor a cobrar", formatMoney(s.package_value)) : ""}
       <div class="ticket-rule"></div>
       <div class="ticket-total">
         <span>${paymentLabel(s.payment_method).toUpperCase()}</span>

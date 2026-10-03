@@ -199,6 +199,7 @@ export async function updateShipment(code, body, user) {
   let paymentReference = existing.payment_reference;
   let packageType = existing.package_type;
   let packageQuantity = existing.package_quantity;
+  let packageValue = existing.package_value;
   let origin = existing.origin;
   let destination = existing.destination;
   let destinationResponsible = existing.destination_responsible;
@@ -213,6 +214,7 @@ export async function updateShipment(code, body, user) {
     paymentReference = body.payment_reference || null;
     packageType = body.package_type || "Paquete";
     packageQuantity = Math.max(1, Math.round(Number(body.package_quantity)) || 1);
+    packageValue = Math.round(Number(body.package_value)) || 0;
     origin = body.origin || null;
     destination = body.destination || null;
     destinationResponsible = body.destination_responsible || null;
@@ -231,7 +233,7 @@ export async function updateShipment(code, body, user) {
       recipient_name = ${body.recipient_name}, recipient_dni = ${body.recipient_dni || null},
       recipient_address = ${body.recipient_address || null}, recipient_phone = ${body.recipient_phone || null},
       recipient_email = ${body.recipient_email || null},
-      package_type = ${packageType}, package_quantity = ${packageQuantity},
+      package_type = ${packageType}, package_quantity = ${packageQuantity}, package_value = ${packageValue},
       origin = ${origin}, destination = ${destination}, destination_responsible = ${destinationResponsible},
       destination_department = ${destinationDepartment},
       cost = ${cost}, total = ${total},

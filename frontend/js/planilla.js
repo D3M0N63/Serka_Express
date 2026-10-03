@@ -276,6 +276,7 @@ function renderTable(shipments, { selectableStatus }) {
       <td data-label="Destinatario">${s.recipient_name}</td>
       <td data-label="Destino">${s.destination || "-"}</td>
       <td data-label="Total">${formatMoney(s.total)}</td>
+      <td data-label="Valor a cobrar">${s.payment_method === "A cobrar" ? formatMoney(s.package_value) : "-"}</td>
       <td data-label="Pago">${s.payment_method || "-"}</td>
       <td data-label="Estado"><span class="badge ${statusClass(s.status)}">${s.status}</span></td>
       <td data-label="Hora">${formatDate(s.created_at)}</td>
@@ -327,6 +328,7 @@ function renderPrintManifest(shipments, { title }) {
             <th>Destino</th>
             <th>Pago</th>
             <th>Monto</th>
+            <th>Valor a cobrar</th>
             <th>Firma</th>
           </tr>
         </thead>
@@ -342,6 +344,7 @@ function renderPrintManifest(shipments, { title }) {
               <td>${s.destination || "-"}</td>
               <td>${s.payment_method || "-"}</td>
               <td>${formatMoney(s.total)}</td>
+              <td>${s.payment_method === "A cobrar" ? formatMoney(s.package_value) : "-"}</td>
               <td></td>
             </tr>
           `

@@ -27,6 +27,7 @@ function renderTable(shipments) {
       <td data-label="Remitente">${s.sender_name}</td>
       <td data-label="Destinatario">${s.recipient_name}</td>
       <td data-label="Total">${formatMoney(s.total)}</td>
+      <td data-label="Valor a cobrar">${s.package_value ? formatMoney(s.package_value) : "-"}</td>
       <td data-label="Fecha">${formatDate(s.created_at)}</td>
       <td data-label="Cobrar">
         <div class="row-actions">

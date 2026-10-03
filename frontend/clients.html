@@ -59,12 +59,21 @@
     <div class="card">
       <div class="toolbar">
         <input type="text" id="search" placeholder="Buscar por nombre o CI/RUC..." />
+        <div class="field" style="flex:0 0 180px; margin-bottom:0;">
+          <select id="filter-type">
+            <option value="">Todos los tipos</option>
+            <option value="Empresa">Empresa</option>
+            <option value="Tienda">Tienda</option>
+            <option value="Casual">Casual</option>
+          </select>
+        </div>
       </div>
       <div id="table-wrap" class="table-wrap">
         <table class="shipments">
           <thead>
             <tr>
               <th>Nombre</th>
+              <th>Tipo</th>
               <th>CI/RUC</th>
               <th>Dirección</th>
               <th>Tel</th>

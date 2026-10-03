@@ -27,6 +27,7 @@ export function renderShipmentsTable({ tbody, emptyState, shipments, onChange })
       <td data-label="Ruta">${s.origin || "-"} &rarr; ${s.destination || "-"}</td>
       <td data-label="Estado"><span class="badge ${statusClass(s.status)}">${s.status}</span></td>
       <td data-label="Total">${formatMoney(s.total)}</td>
+      <td data-label="Valor a cobrar">${s.payment_method === "A cobrar" ? formatMoney(s.package_value) : "-"}</td>
       <td data-label="Fecha">${formatDate(s.created_at)}</td>
       <td data-label="Acciones">
         <div class="row-actions">

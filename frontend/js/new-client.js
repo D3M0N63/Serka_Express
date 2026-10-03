@@ -21,6 +21,7 @@ async function loadForEdit(id) {
   try {
     const { client } = await api(`/clients/${encodeURIComponent(id)}`);
     document.getElementById("name").value = client.name || "";
+    document.getElementById("type").value = client.type || "Casual";
     document.getElementById("dni").value = client.dni || "";
     document.getElementById("address").value = client.address || "";
     document.getElementById("phone").value = client.phone || "";
@@ -37,6 +38,7 @@ form.addEventListener("submit", async (e) => {
 
   const payload = {
     name: document.getElementById("name").value.trim(),
+    type: document.getElementById("type").value,
     dni: document.getElementById("dni").value.trim(),
     address: document.getElementById("address").value.trim(),
     phone: document.getElementById("phone").value.trim(),

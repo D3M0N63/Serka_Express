@@ -1,7 +1,15 @@
 import { sql } from "./db.js";
 
+const CLIENT_TYPES = ["Empresa", "Tienda", "Casual"];
+
 function isUniqueViolation(err) {
   return err && err.code === "23505";
+}
+
+// Si no viene un tipo valido se usa "Casual" por defecto, en vez de
+// rechazar la carga (la mayoria de los clientes son personas sueltas).
+function resolveType(input) {
+  return CLIENT_TYPES.includes(input) ? input : "Casual";
 }
 
 export async function createClient(body, user) {
@@ -9,13 +17,14 @@ export async function createClient(body, user) {
   if (!name) {
     return { status: 400, data: { error: "El nombre es requerido" } };
   }
+  const type = resolveType(body.type);
 
   try {
     const [client] = await sql`
-      INSERT INTO clients (name, dni, address, phone, email, created_by)
+      INSERT INTO clients (name, dni, address, phone, email, type, created_by)
       VALUES (
         ${name}, ${body.dni || null}, ${body.address || null},
-        ${body.phone || null}, ${body.email || null}, ${user.id}
+        ${body.phone || null}, ${body.email || null}, ${type}, ${user.id}
       )
       RETURNING *
     `;
@@ -33,6 +42,7 @@ const PAGE_SIZE = 20;
 export async function listClients(query) {
   const q = (query.q || "").trim();
   const dni = (query.dni || "").trim();
+  const type = CLIENT_TYPES.includes(query.type) ? query.type : "";
 
   if (dni) {
     // Busqueda exacta, usada por el formulario de envio para autocompletar
@@ -44,23 +54,15 @@ export async function listClients(query) {
 
   const page = Math.max(1, parseInt(query.page, 10) || 1);
   const offset = (page - 1) * PAGE_SIZE;
+  const like = `%${q}%`;
 
-  let rows;
-  if (q) {
-    const like = `%${q}%`;
-    rows = await sql`
-      SELECT *, COUNT(*) OVER()::int AS total_count FROM clients
-      WHERE name ILIKE ${like} OR dni ILIKE ${like}
-      ORDER BY name ASC
-      LIMIT ${PAGE_SIZE} OFFSET ${offset}
-    `;
-  } else {
-    rows = await sql`
-      SELECT *, COUNT(*) OVER()::int AS total_count FROM clients
-      ORDER BY name ASC
-      LIMIT ${PAGE_SIZE} OFFSET ${offset}
-    `;
-  }
+  const rows = await sql`
+    SELECT *, COUNT(*) OVER()::int AS total_count FROM clients
+    WHERE (${q} = '' OR name ILIKE ${like} OR dni ILIKE ${like})
+      AND (${type} = '' OR type = ${type})
+    ORDER BY name ASC
+    LIMIT ${PAGE_SIZE} OFFSET ${offset}
+  `;
 
   const total = rows[0]?.total_count ?? 0;
   const clients = rows.map(({ total_count, ...rest }) => rest);
@@ -81,12 +83,13 @@ export async function updateClient(id, body) {
 
   const [existing] = await sql`SELECT id FROM clients WHERE id = ${id}`;
   if (!existing) return { status: 404, data: { error: "Cliente no encontrado" } };
+  const type = resolveType(body.type);
 
   try {
     const [client] = await sql`
       UPDATE clients SET
         name = ${name}, dni = ${body.dni || null}, address = ${body.address || null},
-        phone = ${body.phone || null}, email = ${body.email || null}, updated_at = now()
+        phone = ${body.phone || null}, email = ${body.email || null}, type = ${type}, updated_at = now()
       WHERE id = ${id}
       RETURNING *
     `;

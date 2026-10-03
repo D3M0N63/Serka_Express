@@ -14,8 +14,19 @@ const totalInput = document.getElementById("total");
 const saveBtn = document.getElementById("save-btn");
 const originInput = document.getElementById("origin");
 const citiesList = document.getElementById("py-cities");
+const paymentMethodSelect = document.getElementById("payment_method");
+const packageValueField = document.getElementById("package_value_field");
+const packageValueInput = document.getElementById("package_value");
 
 citiesList.innerHTML = PY_CITIES.map((c) => `<option value="${c}"></option>`).join("");
+
+// El valor del envío solo importa cuando el pago es "A cobrar": es el
+// monto que el repartidor tiene que cobrarle al destinatario al entregar,
+// y se muestra en la boleta impresa para esos casos.
+function syncPackageValueVisibility() {
+  packageValueField.style.display = paymentMethodSelect.value === "A cobrar" ? "" : "none";
+}
+paymentMethodSelect.addEventListener("change", syncPackageValueVisibility);
 
 // Autocompletado de remitente/destinatario a partir del CI/RUC: a medida
 // que se escribe, se muestran coincidencias (buscador tipo datalist); si
@@ -25,6 +36,7 @@ citiesList.innerHTML = PY_CITIES.map((c) => `<option value="${c}"></option>`).jo
 function wireClientSection(prefix) {
   const dniInput = document.getElementById(`${prefix}_dni`);
   const nameInput = document.getElementById(`${prefix}_name`);
+  const typeInput = document.getElementById(`${prefix}_type`);
   const addressInput = document.getElementById(`${prefix}_address`);
   const phoneInput = document.getElementById(`${prefix}_phone`);
   const emailInput = document.getElementById(`${prefix}_email`);
@@ -36,6 +48,7 @@ function wireClientSection(prefix) {
 
   function fillFromClient(client) {
     nameInput.value = client.name || "";
+    typeInput.value = client.type || "Casual";
     addressInput.value = client.address || "";
     phoneInput.value = client.phone || "";
     emailInput.value = client.email || "";
@@ -90,6 +103,7 @@ function wireClientSection(prefix) {
       return;
     }
     const client = await findClient();
+    if (client) typeInput.value = client.type || "Casual";
     saveBtn.style.display = client ? "none" : "inline-flex";
   }
 
@@ -115,6 +129,7 @@ function wireClientSection(prefix) {
   saveBtn.addEventListener("click", async () => {
     const payload = {
       name: nameInput.value.trim(),
+      type: typeInput.value,
       dni: dniInput.value.trim(),
       address: addressInput.value.trim(),
       phone: phoneInput.value.trim(),
@@ -194,6 +209,8 @@ async function loadForEdit(code) {
     document.getElementById("destination_responsible").value = s.destination_responsible || "";
     costInput.value = s.cost || 0;
     document.getElementById("payment_method").value = s.payment_method || "Efectivo";
+    packageValueInput.value = s.package_value || 0;
+    syncPackageValueVisibility();
     document.getElementById("payment_reference").value = s.payment_reference || "";
     syncTotal();
     senderClient.refreshButtonVisibility();
@@ -206,6 +223,7 @@ async function loadForEdit(code) {
       costInput.disabled = true;
       document.getElementById("payment_method").disabled = true;
       document.getElementById("payment_reference").disabled = true;
+      packageValueInput.disabled = true;
       document.getElementById("payment-lock-hint").style.display = "block";
       document.getElementById("package_type").disabled = true;
       quantityInput.disabled = true;
@@ -251,7 +269,10 @@ form.addEventListener("submit", async (e) => {
     destination: document.getElementById("destination").value.trim(),
     destination_responsible: document.getElementById("destination_responsible").value.trim(),
     cost: Math.round(Number(costInput.value)) || 0,
-    payment_method: document.getElementById("payment_method").value,
+    payment_method: paymentMethodSelect.value,
+    // El valor solo aplica a "A cobrar" (lo que el repartidor cobra al
+    // entregar); para cualquier otro pago se guarda en 0.
+    package_value: paymentMethodSelect.value === "A cobrar" ? Math.round(Number(packageValueInput.value)) || 0 : 0,
     payment_reference: document.getElementById("payment_reference").value.trim(),
   };
 

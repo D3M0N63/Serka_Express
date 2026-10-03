@@ -149,6 +149,11 @@ async function initSchema() {
     )
   `;
 
+  // Tipo de cliente (Empresa/Tienda/Casual): para filtrar el listado de
+  // Clientes y para elegirlo al crear un cliente nuevo desde el registro
+  // de envío. Los valores permitidos se validan en clients.js, no acá.
+  await sql`ALTER TABLE clients ADD COLUMN IF NOT EXISTS type TEXT NOT NULL DEFAULT 'Casual'`;
+
   // Informes de credito (C000001, C000002, ...): agrupan las boletas con
   // pago "Crédito" de una misma empresa (remitente) que se imprimen juntas
   // en una hoja de cuenta corriente. paid_at != NULL marca el informe (y
