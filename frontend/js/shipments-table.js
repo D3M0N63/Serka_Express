@@ -1,4 +1,5 @@
 import { api, getUser } from "./api.js";
+import { showAlert, showConfirm } from "./dialog.js";
 import { statusClass, formatDate, formatMoney } from "./status.js";
 
 const ICON_EDIT = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`;
@@ -55,11 +56,11 @@ export function renderShipmentsTable({ tbody, emptyState, shipments, onChange })
 }
 
 async function deleteShipment(code, onChange) {
-  if (!confirm(`¿Eliminar el envío ${code}? Esta acción no se puede deshacer.`)) return;
+  if (!(await showConfirm(`¿Eliminar el envío ${code}? Esta acción no se puede deshacer.`, { title: "Eliminar envío", confirmText: "Eliminar", danger: true }))) return;
   try {
     await api(`/shipments/${encodeURIComponent(code)}`, { method: "DELETE" });
     if (onChange) await onChange();
   } catch (err) {
-    alert(err.message);
+    showAlert(err.message);
   }
 }

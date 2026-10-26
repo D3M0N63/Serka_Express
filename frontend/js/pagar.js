@@ -1,4 +1,5 @@
 import { api, requireAuth, initTopbar } from "./api.js";
+import { showAlert, showConfirm } from "./dialog.js";
 import { formatDate, formatMoney } from "./status.js";
 import { createPager } from "./pager.js";
 
@@ -48,7 +49,7 @@ function renderTable(shipments) {
 }
 
 async function collect(s, method, btn) {
-  if (!confirm(`¿Marcar el envío ${s.code} como cobrado por ${method}?`)) return;
+  if (!(await showConfirm(`¿Marcar el envío ${s.code} como cobrado por ${method}?`, { title: "Registrar cobro", confirmText: "Marcar como cobrado" }))) return;
   errorBanner.style.display = "none";
   btn.disabled = true;
   btn.textContent = "Cobrando...";

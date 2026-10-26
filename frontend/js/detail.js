@@ -1,4 +1,5 @@
 import { api, requireAuth, initTopbar, getUser } from "./api.js";
+import { showAlert, showConfirm } from "./dialog.js";
 import { STATUS_ORDER, statusClass, formatDate, formatMoney } from "./status.js";
 
 requireAuth();
@@ -63,12 +64,12 @@ editBtn.addEventListener("click", () => {
 });
 
 deleteBtn.addEventListener("click", async () => {
-  if (!confirm(`¿Eliminar el envío ${code}? Esta acción no se puede deshacer.`)) return;
+  if (!(await showConfirm(`¿Eliminar el envío ${code}? Esta acción no se puede deshacer.`, { title: "Eliminar envío", confirmText: "Eliminar", danger: true }))) return;
   try {
     await api(`/shipments/${encodeURIComponent(code)}`, { method: "DELETE" });
     window.location.href = "dashboard.html";
   } catch (err) {
-    alert(err.message);
+    showAlert(err.message);
   }
 });
 
@@ -236,7 +237,7 @@ async function submitStatus(code, newStatus, extra, triggerBtn, resetLabel) {
     });
     await load();
   } catch (err) {
-    alert(err.message);
+    showAlert(err.message);
     if (triggerBtn) {
       triggerBtn.disabled = false;
       triggerBtn.textContent = resetLabel;
@@ -381,7 +382,7 @@ function sendTicketViaWhatsApp(s, target) {
   const phone = normalizeWhatsAppPhone(rawPhone);
 
   if (!phone) {
-    alert(`${target === "sender" ? "El remitente" : "El destinatario"} no tiene un teléfono registrado.`);
+    showAlert(`${target === "sender" ? "El remitente" : "El destinatario"} no tiene un teléfono registrado.`, { title: "Falta el teléfono", variant: "warning" });
     return;
   }
 

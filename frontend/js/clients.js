@@ -1,4 +1,5 @@
 import { api, requireAuth, initTopbar } from "./api.js";
+import { showAlert, showConfirm } from "./dialog.js";
 import { createPager } from "./pager.js";
 
 requireAuth();
@@ -53,12 +54,12 @@ function renderTable(clients) {
 }
 
 async function deleteClient(c) {
-  if (!confirm(`¿Eliminar al cliente "${c.name}"? Esta acción no se puede deshacer.`)) return;
+  if (!(await showConfirm(`¿Eliminar al cliente "${c.name}"? Esta acción no se puede deshacer.`, { title: "Eliminar cliente", confirmText: "Eliminar", danger: true }))) return;
   try {
     await api(`/clients/${encodeURIComponent(c.id)}`, { method: "DELETE" });
     await load(currentPage);
   } catch (err) {
-    alert(err.message);
+    showAlert(err.message);
   }
 }
 

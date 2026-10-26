@@ -1328,3 +1328,94 @@ table.shipments td strong { font-weight: 800; letter-spacing: 0.2px; }
   margin-top: 1mm;
   height: 14mm;
 }
+
+/* =====================================================================
+   Avisos y confirmaciones (js/dialog.js)
+   ===================================================================== */
+.dialog-overlay { z-index: 200; animation: dialog-fade 0.12s ease-out; }
+.dialog-card { max-width: 420px; animation: dialog-pop 0.16s ease-out; }
+.dialog-head { display: flex; gap: 14px; align-items: flex-start; }
+.dialog-icon { flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--brand-soft); color: var(--ink); }
+.dialog-icon-error { background: var(--red-soft); color: var(--red); }
+.dialog-icon-warning { background: #fdf0d5; color: #9a6410; }
+.dialog-body { min-width: 0; flex: 1; }
+.dialog-title { margin: 2px 0 6px; }
+.dialog-message { font-size: 14px; line-height: 1.5; color: var(--text-muted); overflow-wrap: anywhere; }
+@keyframes dialog-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes dialog-pop { from { transform: translateY(8px) scale(0.98); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (max-width: 600px) { .dialog-card { animation: sheet-up 0.18s ease-out; } }
+@media print { .dialog-overlay { display: none !important; } }
+
+/* =====================================================================
+   Controles nativos con el estilo del sistema
+   Capa global (:where = especificidad 0): cubre todo control que quede
+   fuera de .field/.toolbar (tablas, modales, filtros) sin pisar las
+   reglas específicas de arriba.
+   ===================================================================== */
+:where(input:not([type="checkbox"], [type="radio"], [type="hidden"], [type="file"], [type="range"], [type="button"], [type="submit"]), select, textarea) {
+  min-height: var(--control-h);
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--text-dark);
+  background-color: #fff;
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+:where(input:not([type="checkbox"], [type="radio"], [type="hidden"], [type="file"], [type="range"], [type="button"], [type="submit"]), select, textarea):hover { border-color: #cfccbc; }
+:where(input, select, textarea):focus { outline: none; border-color: var(--brand-deep); box-shadow: var(--ring); }
+:where(input, select, textarea):disabled { background-color: var(--surface-2); color: var(--text-muted); cursor: not-allowed; opacity: 0.8; }
+
+/* Flecha propia en los selectores (la nativa cambia según el navegador) */
+select:not([multiple]) {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 36px;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235c5a4f' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+}
+select option { color: var(--ink); background: #fff; }
+
+/* Fecha: indicador del calendario con el cursor correcto */
+input[type="date"], input[type="time"], input[type="month"] { min-width: 150px; }
+input::-webkit-calendar-picker-indicator { cursor: pointer; opacity: 0.65; }
+input::-webkit-calendar-picker-indicator:hover { opacity: 1; }
+
+/* Selectores dentro de tablas (p. ej. método de cobro): más compactos */
+table.shipments select, table.shipments input:not([type="checkbox"], [type="radio"]) { min-height: 34px; padding-block: 5px; font-size: 13px; }
+table.shipments select { padding-right: 32px; background-position: right 9px center; background-size: 14px; }
+
+/* Barras de desplazamiento y selección de texto */
+html { scrollbar-color: #c9c6b6 transparent; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: #c9c6b6; border-radius: 10px; border: 2px solid transparent; background-clip: content-box; }
+::-webkit-scrollbar-thumb:hover { background: #a9a691; background-clip: content-box; border: 2px solid transparent; }
+::selection { background: var(--brand); color: var(--ink); }
+
+/* Checkbox y radio propios (el nativo varía por navegador y sistema) */
+input[type="checkbox"], input[type="radio"] {
+  appearance: none;
+  -webkit-appearance: none;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  border: 1.5px solid #b9b6a3;
+  border-radius: 5px;
+  background: #fff center / 12px no-repeat;
+  vertical-align: middle;
+  cursor: pointer;
+  transition: background-color 0.12s, border-color 0.12s, box-shadow 0.12s;
+}
+input[type="radio"] { border-radius: 50%; }
+input[type="checkbox"]:hover, input[type="radio"]:hover { border-color: var(--ink); }
+input[type="checkbox"]:checked, input[type="radio"]:checked { background-color: var(--brand); border-color: var(--ink); }
+input[type="checkbox"]:checked { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23141414' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7.5'/%3E%3C/svg%3E"); }
+input[type="radio"]:checked { background-image: radial-gradient(circle, var(--ink) 0 3.5px, transparent 4px); }
+input[type="checkbox"]:indeterminate { background-color: var(--brand); border-color: var(--ink); background-image: linear-gradient(var(--ink), var(--ink)); background-size: 9px 2px; }
+input[type="checkbox"]:focus-visible, input[type="radio"]:focus-visible { outline: none; box-shadow: var(--ring); }
+input[type="checkbox"]:disabled, input[type="radio"]:disabled { opacity: 0.45; cursor: not-allowed; }

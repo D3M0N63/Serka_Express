@@ -1,4 +1,5 @@
 import { api, requireAuth, requireRole, initTopbar } from "./api.js";
+import { showAlert, showConfirm } from "./dialog.js";
 import { formatDate, formatMoney } from "./status.js";
 import { createPager } from "./pager.js";
 
@@ -166,7 +167,7 @@ function renderOpenSession(session, summary) {
   document.getElementById("close-btn").addEventListener("click", async (e) => {
     errorBanner.style.display = "none";
     const counted = Math.round(Number(document.getElementById("counted-amount").value)) || 0;
-    if (!confirm(`¿Confirmás el cierre de caja con ${formatMoney(counted)} contados?`)) return;
+    if (!(await showConfirm(`¿Confirmás el cierre de caja con ${formatMoney(counted)} contados?`, { title: "Cerrar caja", confirmText: "Cerrar caja" }))) return;
     const notes = document.getElementById("close-notes").value.trim();
     const btn = e.currentTarget;
     btn.disabled = true;

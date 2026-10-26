@@ -1,4 +1,5 @@
 import { api, requireAuth, requireRole, initTopbar, getUser } from "./api.js";
+import { showAlert, showConfirm } from "./dialog.js";
 
 requireAuth();
 requireRole(["admin"]);
@@ -47,12 +48,12 @@ function renderTable(users) {
 }
 
 async function deleteUser(u) {
-  if (!confirm(`¿Eliminar al usuario "${u.name}" (${u.username})? Esta acción no se puede deshacer.`)) return;
+  if (!(await showConfirm(`¿Eliminar al usuario "${u.name}" (${u.username})? Esta acción no se puede deshacer.`, { title: "Eliminar usuario", confirmText: "Eliminar", danger: true }))) return;
   try {
     await api(`/users/${encodeURIComponent(u.id)}`, { method: "DELETE" });
     await load();
   } catch (err) {
-    alert(err.message);
+    showAlert(err.message);
   }
 }
 

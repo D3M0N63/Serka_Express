@@ -1,4 +1,5 @@
 import { api, requireAuth, initTopbar, getUser } from "./api.js";
+import { showAlert, showConfirm } from "./dialog.js";
 import { PY_CITIES } from "./py-cities.js";
 
 requireAuth();
@@ -274,7 +275,7 @@ function wireClientSection(prefix) {
       email: emailInput.value.trim(),
     };
     if (!payload.name) {
-      alert("Completa el nombre antes de guardar el cliente.");
+      showAlert("Completa el nombre antes de guardar el cliente.", { title: "Falta el nombre", variant: "warning" });
       return;
     }
     saveBtn.disabled = true;
@@ -283,7 +284,7 @@ function wireClientSection(prefix) {
       await api("/clients", { method: "POST", body: payload });
       saveBtn.style.display = "none";
     } catch (err) {
-      alert(err.message);
+      showAlert(err.message);
     } finally {
       saveBtn.disabled = false;
       saveBtn.textContent = "+ Guardar Cliente";
