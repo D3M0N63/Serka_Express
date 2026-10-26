@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { neon } from "@neondatabase/serverless";
 import { hashPassword } from "./auth.js";
 import { PY_DEPARTMENTS } from "../../../frontend/js/py-cities.js";
@@ -26,7 +27,29 @@ export function ensureSchema() {
   return schemaReady;
 }
 
+// Huella de las migraciones: cambia sola cuando se edita este archivo o la
+// lista de departamentos, asi no hay que acordarse de subir una version.
+// Si coincide con la guardada en la base, el esquema ya esta al dia y se
+// omiten las ~40 consultas de arranque (cada una es un viaje HTTPS a Neon,
+// que en un arranque en frio de la funcion sumaban segundos).
+const SCHEMA_HASH = createHash("sha256")
+  .update(runMigrations.toString() + migrateSequentialCodes.toString() + backfillDestinationDepartments.toString() + JSON.stringify(PY_DEPARTMENTS))
+  .digest("hex");
+
 async function initSchema() {
+  await sql`CREATE TABLE IF NOT EXISTS schema_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)`;
+  const [row] = await sql`SELECT value FROM schema_meta WHERE key = 'schema_hash'`;
+  if (row && row.value === SCHEMA_HASH) return;
+
+  await runMigrations();
+
+  await sql`
+    INSERT INTO schema_meta (key, value) VALUES ('schema_hash', ${SCHEMA_HASH})
+    ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
+  `;
+}
+
+async function runMigrations() {
   await sql`
     CREATE TABLE IF NOT EXISTS users (
       id SERIAL PRIMARY KEY,
