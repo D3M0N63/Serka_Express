@@ -232,24 +232,35 @@ function wireClientSection(prefix) {
 
       items = [];
       if (wantRegistry) renderBox(true);
-      const clients = await searchCandidates(term);
-      if (stale()) return;
-      items = clients
-        .filter((c) => c.dni)
-        .map((c) => ({ kind: "client", client: c, title: c.name, sub: c.dni }));
-      active = -1;
-      renderBox(wantRegistry);
 
-      const c = await registry;
-      if (stale()) return;
-      const alreadyListed = c && items.some((it) => (it.client.dni || "").replace(/-\d$/, "") === String(c.ruc).replace(/-\d$/, ""));
-      if (c && !alreadyListed) {
-        items.push({ kind: "registry", c, title: c.razonSocial, sub: c.ruc });
-      }
-      renderBox(false);
+      // Cada fuente pinta apenas responde: el padrón no espera a la búsqueda
+      // local (que puede tardar en un arranque en frío) ni al revés.
+      let registryDone = !wantRegistry;
+      let clientItems = [];
+      let registryItem = null;
+      const paint = (pending) => {
+        const listed = (registryItem && clientItems.some((it) => (it.client.dni || "").replace(/-\d$/, "") === String(registryItem.c.ruc).replace(/-\d$/, "")));
+        items = registryItem && !listed ? [...clientItems, registryItem] : clientItems;
+        active = -1;
+        renderBox(pending);
+      };
 
-      const exact = candidates.find((cl) => cl.dni === term);
-      if (exact) fillFromClient(exact);
+      const clientsDone = searchCandidates(term).then((clients) => {
+        if (stale()) return;
+        clientItems = clients
+          .filter((c) => c.dni)
+          .map((c) => ({ kind: "client", client: c, title: c.name, sub: c.dni }));
+        paint(wantRegistry && !registryDone);
+        const exact = candidates.find((cl) => cl.dni === term);
+        if (exact) fillFromClient(exact);
+      });
+      const registryP = registry.then((c) => {
+        registryDone = true;
+        if (stale()) return;
+        if (c) registryItem = { kind: "registry", c, title: c.razonSocial, sub: c.ruc };
+        paint(false);
+      });
+      await Promise.all([clientsDone, registryP]);
     }, 250);
   });
 

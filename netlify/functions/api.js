@@ -65,12 +65,21 @@ function getAuthUser(req) {
 
 export default async (req) => {
   try {
-    await ensureSchema();
-
     const url = new URL(req.url);
     const pathname = url.pathname.replace(/^\/api/, "") || "/";
     const query = Object.fromEntries(url.searchParams);
     const method = req.method;
+
+    // El padron de contribuyentes no usa la base de datos: se atiende antes
+    // de ensureSchema() para que un arranque en frio (migraciones) no demore
+    // la busqueda por CI/RUC.
+    if (pathname === "/contribuyente" && method === "GET") {
+      if (!getAuthUser(req)) return json(401, { error: "No autorizado" });
+      const { status, data } = await lookupContribuyente(query);
+      return json(status, data);
+    }
+
+    await ensureSchema();
 
     // ---- Rutas publicas ----
     if (pathname === "/auth/login" && method === "POST") {
@@ -94,11 +103,6 @@ export default async (req) => {
     }
     if (pathname === "/auth/me" && method === "PATCH") {
       const { status, data } = await updateProfile(await safeJson(req), user);
-      return json(status, data);
-    }
-
-    if (pathname === "/contribuyente" && method === "GET") {
-      const { status, data } = await lookupContribuyente(query);
       return json(status, data);
     }
 
