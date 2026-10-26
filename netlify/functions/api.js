@@ -1,6 +1,7 @@
 import { ensureSchema } from "./lib/db.js";
 import { verifyToken } from "./lib/auth.js";
 import { login, me, updateProfile } from "./lib/auth-handlers.js";
+import { lookupContribuyente } from "./lib/contribuyentes.js";
 import {
   createShipment,
   listShipments,
@@ -93,6 +94,11 @@ export default async (req) => {
     }
     if (pathname === "/auth/me" && method === "PATCH") {
       const { status, data } = await updateProfile(await safeJson(req), user);
+      return json(status, data);
+    }
+
+    if (pathname === "/contribuyente" && method === "GET") {
+      const { status, data } = await lookupContribuyente(query);
       return json(status, data);
     }
 
