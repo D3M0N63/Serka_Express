@@ -207,6 +207,10 @@ async function initSchema() {
 
   await sql`ALTER TABLE shipments ADD COLUMN IF NOT EXISTS destination_responsible TEXT`;
 
+  // Observacion libre de "Detalles del Envio": se muestra en la boleta
+  // impresa justo antes de Origen.
+  await sql`ALTER TABLE shipments ADD COLUMN IF NOT EXISTS observation TEXT`;
+
   await migrateSequentialCodes();
 
   const [{ count }] = await sql`SELECT COUNT(*)::int AS count FROM users`;

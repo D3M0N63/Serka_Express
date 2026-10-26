@@ -44,14 +44,14 @@ export async function createShipment(body, user) {
     INSERT INTO shipments (
       sender_name, sender_dni, sender_address, sender_phone, sender_email,
       recipient_name, recipient_dni, recipient_address, recipient_phone, recipient_email,
-      package_type, package_content, package_value, package_quantity,
+      package_type, package_content, package_value, package_quantity, observation,
       origin, destination, destination_responsible, destination_department, pickup_at_home,
       cost, total, payment_method, payment_reference,
       status, created_by, paid_at
     ) VALUES (
       ${body.sender_name}, ${body.sender_dni || null}, ${body.sender_address || null}, ${body.sender_phone || null}, ${body.sender_email || null},
       ${body.recipient_name}, ${body.recipient_dni || null}, ${body.recipient_address || null}, ${body.recipient_phone || null}, ${body.recipient_email || null},
-      ${body.package_type || "Paquete"}, ${body.package_content || null}, ${packageValue}, ${packageQuantity},
+      ${body.package_type || "Paquete"}, ${body.package_content || null}, ${packageValue}, ${packageQuantity}, ${(body.observation || "").trim() || null},
       ${body.origin || null}, ${body.destination || null}, ${body.destination_responsible || null}, ${destinationDepartment}, ${!!body.pickup_at_home},
       ${cost}, ${total}, ${paymentMethod}, ${body.payment_reference || null},
       'Registrado', ${user.id}, ${paidAt}
@@ -200,6 +200,7 @@ export async function updateShipment(code, body, user) {
   let packageType = existing.package_type;
   let packageQuantity = existing.package_quantity;
   let packageValue = existing.package_value;
+  let observation = existing.observation;
   let origin = existing.origin;
   let destination = existing.destination;
   let destinationResponsible = existing.destination_responsible;
@@ -215,6 +216,7 @@ export async function updateShipment(code, body, user) {
     packageType = body.package_type || "Paquete";
     packageQuantity = Math.max(1, Math.round(Number(body.package_quantity)) || 1);
     packageValue = Math.round(Number(body.package_value)) || 0;
+    observation = (body.observation || "").trim() || null;
     origin = body.origin || null;
     destination = body.destination || null;
     destinationResponsible = body.destination_responsible || null;
@@ -234,6 +236,7 @@ export async function updateShipment(code, body, user) {
       recipient_address = ${body.recipient_address || null}, recipient_phone = ${body.recipient_phone || null},
       recipient_email = ${body.recipient_email || null},
       package_type = ${packageType}, package_quantity = ${packageQuantity}, package_value = ${packageValue},
+      observation = ${observation},
       origin = ${origin}, destination = ${destination}, destination_responsible = ${destinationResponsible},
       destination_department = ${destinationDepartment},
       cost = ${cost}, total = ${total},

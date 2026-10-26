@@ -183,6 +183,7 @@ function render(s, history) {
         <div class="info-list">
           ${infoRow("Tipo", s.package_type)}
           ${infoRow("Cantidad", s.package_quantity)}
+          ${infoRow("Observación", s.observation)}
         </div>
       </div>
       <div class="card">
@@ -477,6 +478,7 @@ function buildTicketPdfDoc(s) {
   section("ENVÍO");
   row("Tipo", s.package_type);
   row("Cantidad", s.package_quantity);
+  if (s.observation) row("Observación", s.observation);
   row("Origen", s.origin);
   row("Destino", s.destination);
   row("Estado", s.status);
@@ -665,6 +667,7 @@ function buildTicketHtml(s, withSignatures) {
       <div class="ticket-section">ENVÍO</div>
       ${ticketRow("Tipo", s.package_type)}
       ${ticketRow("Cantidad", s.package_quantity)}
+      ${s.observation ? ticketRow("Observación", s.observation) : ""}
       ${ticketRow("Origen", s.origin)}
       ${ticketRow("Destino", s.destination)}
       ${ticketRow("Estado", s.status)}

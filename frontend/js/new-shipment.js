@@ -41,10 +41,10 @@ function wireClientSection(prefix) {
   const phoneInput = document.getElementById(`${prefix}_phone`);
   const emailInput = document.getElementById(`${prefix}_email`);
   const saveBtn = document.getElementById(`save-${prefix}-client`);
-  const datalist = document.getElementById(`${prefix}-clients-list`);
 
   let candidates = [];
   let searchTimer = null;
+  const registryCache = new Map();
 
   function fillFromClient(client) {
     nameInput.value = client.name || "";
@@ -59,13 +59,11 @@ function wireClientSection(prefix) {
     try {
       const { clients } = await api(`/clients?q=${encodeURIComponent(term)}`);
       candidates = clients;
-      datalist.innerHTML = clients
-        .filter((c) => c.dni)
-        .map((c) => `<option value="${c.dni}">${c.name}</option>`)
-        .join("");
     } catch (err) {
       console.error(err);
+      candidates = [];
     }
+    return candidates;
   }
 
   async function findClient() {
@@ -92,7 +90,41 @@ function wireClientSection(prefix) {
       fillFromClient(client);
     } else {
       saveBtn.style.display = "inline-flex";
+      await fillFromRegistry();
     }
+  }
+
+  // Si el CI/RUC no es un cliente registrado, se consulta el padrón de
+  // contribuyentes (Tu RUC) para sugerir el nombre. No pisa un nombre que
+  // ya se haya escrito, y si la consulta falla se sigue a mano.
+  async function fillFromRegistry() {
+    const dni = dniInput.value.trim();
+    if (!dni || nameInput.value.trim()) return;
+    nameInput.placeholder = "Consultando padrón...";
+    try {
+      const contribuyente = await fetchRegistry(dni);
+      if (contribuyente && dniInput.value.trim() === dni && !nameInput.value.trim()) {
+        nameInput.value = contribuyente.razonSocial;
+        typeInput.value = contribuyente.esPersonaJuridica ? "Empresa" : "Casual";
+      }
+    } finally {
+      nameInput.placeholder = "";
+    }
+  }
+
+  // La consulta se guarda por CI/RUC: se dispara mientras se escribe (en
+  // paralelo con la búsqueda de clientes) y al salir del campo ya está
+  // lista. Si falla o no hay resultado se resuelve en null.
+  function fetchRegistry(dni) {
+    if (!registryCache.has(dni)) {
+      registryCache.set(
+        dni,
+        api(`/contribuyente?ruc=${encodeURIComponent(dni)}`)
+          .then(({ contribuyente }) => contribuyente)
+          .catch(() => null)
+      );
+    }
+    return registryCache.get(dni);
   }
 
   // Usado al cargar un envío existente para editar: solo decide si mostrar
@@ -108,20 +140,115 @@ function wireClientSection(prefix) {
   }
 
   dniInput.addEventListener("blur", lookupAndFill);
+  // Selector de sugerencias bajo el campo CI/RUC: clientes registrados que
+  // coinciden y, cuando responde, el contribuyente del padrón.
+  const box = document.createElement("div");
+  box.className = "suggest";
+  box.setAttribute("role", "listbox");
+  box.hidden = true;
+  dniInput.parentElement.classList.add("has-suggest");
+  dniInput.parentElement.appendChild(box);
+  dniInput.setAttribute("autocomplete", "off");
+
+  let items = [];
+  let active = -1;
+
+  function esc(text) {
+    const d = document.createElement("div");
+    d.textContent = text ?? "";
+    return d.innerHTML;
+  }
+
+  function closeBox() {
+    box.hidden = true;
+    active = -1;
+  }
+
+  function renderBox(pending) {
+    const rows = items.map(
+      (it, i) => `
+        <button type="button" role="option" class="suggest-item${i === active ? " active" : ""}" data-i="${i}">
+          <span class="suggest-main">${esc(it.title)}</span>
+          <span class="suggest-sub">${esc(it.sub)}</span>
+          <span class="suggest-tag ${it.kind}">${it.kind === "registry" ? "Padrón" : "Cliente"}</span>
+        </button>`
+    );
+    if (pending) rows.push('<div class="suggest-note">Consultando padrón...</div>');
+    box.innerHTML = rows.join("");
+    box.hidden = rows.length === 0;
+  }
+
+  function choose(it) {
+    if (it.kind === "client") {
+      dniInput.value = it.client.dni || dniInput.value;
+      fillFromClient(it.client);
+    } else {
+      nameInput.value = it.c.razonSocial;
+      typeInput.value = it.c.esPersonaJuridica ? "Empresa" : "Casual";
+      saveBtn.style.display = "inline-flex";
+    }
+    closeBox();
+  }
+
+  // mousedown (no click) y preventDefault: evita que el campo pierda el foco
+  // antes de elegir.
+  box.addEventListener("mousedown", (e) => {
+    e.preventDefault();
+    const btn = e.target.closest(".suggest-item");
+    if (btn) choose(items[Number(btn.dataset.i)]);
+  });
+
+  dniInput.addEventListener("keydown", (e) => {
+    if (box.hidden || !items.length) return;
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      active = (active + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
+      renderBox(false);
+    } else if (e.key === "Enter" && active >= 0) {
+      e.preventDefault();
+      choose(items[active]);
+    } else if (e.key === "Escape") {
+      closeBox();
+    }
+  });
+  dniInput.addEventListener("focusout", closeBox);
+
   dniInput.addEventListener("input", () => {
     const term = dniInput.value.trim();
     clearTimeout(searchTimer);
 
     if (!term) {
       saveBtn.style.display = "none";
-      datalist.innerHTML = "";
       candidates = [];
+      items = [];
+      closeBox();
       return;
     }
 
     searchTimer = setTimeout(async () => {
-      await searchCandidates(term);
-      const exact = candidates.find((c) => c.dni === term);
+      const wantRegistry = term.length >= 5;
+      const registry = wantRegistry ? fetchRegistry(term) : Promise.resolve(null);
+      const stale = () => dniInput.value.trim() !== term;
+
+      items = [];
+      if (wantRegistry) renderBox(true);
+      const clients = await searchCandidates(term);
+      if (stale()) return;
+      items = clients
+        .filter((c) => c.dni)
+        .map((c) => ({ kind: "client", client: c, title: c.name, sub: c.dni }));
+      active = -1;
+      renderBox(wantRegistry);
+
+      const c = await registry;
+      if (stale()) return;
+      const alreadyListed = c && items.some((it) => (it.client.dni || "").replace(/-\d$/, "") === String(c.ruc).replace(/-\d$/, ""));
+      if (c && !alreadyListed) {
+        items.push({ kind: "registry", c, title: c.razonSocial, sub: c.ruc });
+      }
+      renderBox(false);
+
+      const exact = candidates.find((cl) => cl.dni === term);
       if (exact) fillFromClient(exact);
     }, 250);
   });
@@ -204,6 +331,7 @@ async function loadForEdit(code) {
     document.getElementById("recipient_email").value = s.recipient_email || "";
     document.getElementById("package_type").value = s.package_type || "Paquete";
     document.getElementById("package_quantity").value = s.package_quantity || 1;
+    document.getElementById("observation").value = s.observation || "";
     originInput.value = s.origin || "";
     document.getElementById("destination").value = s.destination || "";
     document.getElementById("destination_responsible").value = s.destination_responsible || "";
@@ -227,6 +355,7 @@ async function loadForEdit(code) {
       document.getElementById("payment-lock-hint").style.display = "block";
       document.getElementById("package_type").disabled = true;
       quantityInput.disabled = true;
+      document.getElementById("observation").disabled = true;
       originInput.disabled = true;
       document.getElementById("destination").disabled = true;
       document.getElementById("destination_responsible").disabled = true;
@@ -265,6 +394,7 @@ form.addEventListener("submit", async (e) => {
     recipient_email: document.getElementById("recipient_email").value.trim(),
     package_type: document.getElementById("package_type").value,
     package_quantity: Math.max(1, Math.round(Number(document.getElementById("package_quantity").value)) || 1),
+    observation: document.getElementById("observation").value.trim(),
     origin: originInput.value.trim(),
     destination: document.getElementById("destination").value.trim(),
     destination_responsible: document.getElementById("destination_responsible").value.trim(),

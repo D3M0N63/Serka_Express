@@ -13,42 +13,17 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Serka Express" />
+  <style>
+    /* La hoja de ruta se imprime apaisada (horizontal): Chromium no
+       siempre respeta @page anidado dentro de una media query, por eso
+       va como regla de nivel superior aca (igual que en detail.html). */
+    @page {
+      size: A4 landscape;
+      margin: 8mm;
+    }
+  </style>
 </head>
 <body class="manifest-print-page">
-  <header class="topbar">
-    <div class="topbar-left">
-      <a href="dashboard.html" class="brand">
-        <svg class="logo-mark" viewBox="0 0 40 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <path d="M37 3C25 3 12 9 4 18C12 27 25 33 37 33" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
-          <path d="M30 8C21 8 11 12.5 6 18C11 23.5 21 28 30 28" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
-          <path d="M23 13C17 13 10 15.5 8 18C10 20.5 17 23 23 23" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
-        </svg>
-        <div>
-          <div class="logo">SERKA <span class="express">EXPRESS</span></div>
-          <span class="logo-sub">COURRIER &middot; TODO A TIEMPO</span>
-        </div>
-      </a>
-    </div>
-    <div class="topbar-right">
-      <a href="profile.html" class="profile-link">
-        <div class="avatar" data-user-avatar>AE</div>
-        <span class="name" data-user-name>Usuario</span>
-      </a>
-      <button class="logout-btn" data-logout>Salir</button>
-    </div>
-  </header>
-
-  <nav class="subnav">
-    <a href="dashboard.html" class="subnav-link">Inicio</a>
-    <a href="shipments.html" class="subnav-link">Envíos</a>
-    <a href="planilla.html" class="subnav-link active">Planilla</a>
-    <a href="clients.html" class="subnav-link">Clientes</a>
-    <a href="pagar.html" class="subnav-link">Pagar</a>
-    <a href="credito.html" class="subnav-link">Crédito</a>
-    <a href="caja.html" class="subnav-link">Caja</a>
-    <a href="usuarios.html" class="subnav-link">Usuarios</a>
-    <a href="cierres.html" class="subnav-link">Cierres</a>
-  </nav>
 
   <main class="page">
     <div class="page-header">
@@ -127,6 +102,20 @@
           <select id="filter-city">
             <option value="">Todas las ciudades</option>
           </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card no-print" id="agent-data-card">
+      <h2 class="card-title">Datos del agente para la hoja impresa</h2>
+      <div class="grid-2">
+        <div class="field">
+          <label for="agent-dni">C.I Nº</label>
+          <input type="text" id="agent-dni" placeholder="Ej: 5.508.589" />
+        </div>
+        <div class="field">
+          <label for="agent-cel">CEL Nº</label>
+          <input type="text" id="agent-cel" placeholder="Ej: 0982-142-920" />
         </div>
       </div>
     </div>

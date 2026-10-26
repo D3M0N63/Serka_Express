@@ -1,10 +1,23 @@
-import { api, requireAuth, initTopbar } from "./api.js";
+import { api, requireAuth, initTopbar, getUser } from "./api.js";
 import { formatDate, formatMoney, statusClass } from "./status.js";
 import { PY_DEPARTMENTS, PY_CITIES } from "./py-cities.js";
 import { createPager } from "./pager.js";
 
 requireAuth();
 initTopbar();
+
+const agentDniInput = document.getElementById("agent-dni");
+const agentCelInput = document.getElementById("agent-cel");
+
+// Los datos del agente (C.I./Celular) no estan guardados en la cuenta de
+// usuario: se recuerdan en este navegador para no tener que retipearlos
+// cada vez que se imprime la hoja.
+const AGENT_DNI_KEY = "serka_planilla_agent_dni";
+const AGENT_CEL_KEY = "serka_planilla_agent_cel";
+agentDniInput.value = localStorage.getItem(AGENT_DNI_KEY) || "";
+agentCelInput.value = localStorage.getItem(AGENT_CEL_KEY) || "";
+agentDniInput.addEventListener("input", () => localStorage.setItem(AGENT_DNI_KEY, agentDniInput.value));
+agentCelInput.addEventListener("input", () => localStorage.setItem(AGENT_CEL_KEY, agentCelInput.value));
 
 const dateInput = document.getElementById("filter-date");
 const departmentSelect = document.getElementById("filter-department");
@@ -135,7 +148,7 @@ async function load() {
     const { shipments } = await api(`/shipments/manifest?${params.toString()}`);
     currentShipments = shipments;
     renderTable(shipments, { selectableStatus: "Registrado" });
-    renderPrintManifest(shipments, { title: "Serka Express — Planilla de Envíos" });
+    renderPrintManifest(shipments);
     updateSelectionUI();
   } catch (err) {
     errorBanner.textContent = err.message;
@@ -197,7 +210,7 @@ async function searchManifest() {
     updatePanels();
 
     renderTable(shipments, { selectableStatus: "En transito" });
-    renderPrintManifest(shipments, { title: `Serka Express — Planilla ${manifest.code}` });
+    renderPrintManifest(shipments);
     updateSelectionUI();
   } catch (err) {
     errorBanner.textContent = err.message;
@@ -247,7 +260,7 @@ async function dispatchManifest() {
     selectedCodes.clear();
     viewingManifestCount.textContent = shipments.length;
     renderTable(shipments, { selectableStatus: "En transito" });
-    renderPrintManifest(shipments, { title: `Serka Express — Planilla ${viewingManifest.code}` });
+    renderPrintManifest(shipments);
     updateSelectionUI();
   } catch (err) {
     errorBanner.textContent = err.message;
@@ -299,63 +312,159 @@ function renderTable(shipments, { selectableStatus }) {
   }
 }
 
-function renderPrintManifest(shipments, { title }) {
-  const deptLabel = departmentSelect.value || "Todos los departamentos";
-  const cityLabel = citySelect.value || "Todas las ciudades";
-  const [year, month, day] = dateInput.value.split("-");
-  const dateLabel = `${day}/${month}/${year}`;
-  const subtitle = viewingManifest ? "" : `<div>${deptLabel} &middot; ${cityLabel}</div>`;
+// Texto de pago para la hoja ("A COBRAR" / "CRÉDITO" / "PAGADO"), igual
+// criterio que paymentLabel() en detail.js para el ticket.
+function planillaPaymentLabel(method) {
+  if (method === "Crédito") return "CRÉDITO";
+  if (method === "A cobrar") return "A COBRAR";
+  return "PAGADO"; // Efectivo o Transferencia
+}
+
+// "YYYY-MM-DD" (como filter-date) se parsea a mano en vez de con
+// `new Date(string)`: ese constructor interpreta la fecha-sola como UTC
+// medianoche, que en Paraguay (UTC-3) cae en el dia anterior al mostrarla
+// en hora local. Un timestamp ISO completo (con hora) no tiene ese
+// problema y se puede parsear directo.
+function parseLocalDate(dateLike) {
+  if (typeof dateLike === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dateLike)) {
+    const [y, m, day] = dateLike.split("-").map(Number);
+    return new Date(y, m - 1, day);
+  }
+  return new Date(dateLike);
+}
+
+// "VIERNES 02 - 10 - 2026." a partir de un Date.
+function planillaDateLabel(d) {
+  const weekday = d.toLocaleDateString("es-PY", { weekday: "long" }).toUpperCase();
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  return `${weekday} ${day} - ${month} - ${d.getFullYear()}.`;
+}
+
+// Numero plano con separador de miles, sin simbolo de moneda (asi se ve
+// en la planilla de agente en papel).
+function plainNumber(value) {
+  return Math.round(Number(value) || 0).toLocaleString("es-PY");
+}
+
+const PLANILLA_MIN_ROWS = 12;
+
+function renderPrintManifest(shipments) {
+  const user = getUser() || {};
+  const d = parseLocalDate(viewingManifest ? viewingManifest.created_at : dateInput.value);
+
+  // Monto a cobrar en destino: solo para boletas "A cobrar", el resto es 0.
+  const rows = shipments.map((s, i) => ({
+    nro: i + 1,
+    dia: new Date(s.created_at).getDate(),
+    guia: s.code,
+    sender: s.sender_name || "-",
+    senderPhone: s.sender_phone || "-",
+    origin: s.origin || "-",
+    recipient: s.recipient_name || "-",
+    recipientPhone: s.recipient_phone || "-",
+    destination: s.destination || "-",
+    object: s.package_type || "-",
+    payment: planillaPaymentLabel(s.payment_method),
+    monto: s.payment_method === "A cobrar" ? Math.round(Number(s.package_value) || 0) : 0,
+    address: s.recipient_address || "-",
+  }));
+
+  const totalCobro = rows.reduce((sum, r) => sum + r.monto, 0);
+  const blankRows = Math.max(0, PLANILLA_MIN_ROWS - rows.length);
 
   printManifest.innerHTML = `
-    <div class="manifest-doc">
-      <div class="manifest-doc-header">
+    <div class="planilla-sheet">
+      <div class="planilla-sheet-header">
+        <svg class="logo-mark" viewBox="0 0 40 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M37 3C25 3 12 9 4 18C12 27 25 33 37 33" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+          <path d="M30 8C21 8 11 12.5 6 18C11 23.5 21 28 30 28" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+          <path d="M23 13C17 13 10 15.5 8 18C10 20.5 17 23 23 23" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+        </svg>
         <div>
-          <div class="manifest-doc-title">${title}</div>
-          ${subtitle}
-        </div>
-        <div class="manifest-doc-meta">
-          <div><strong>Fecha:</strong> ${dateLabel}</div>
-          <div><strong>Total de envíos:</strong> ${shipments.length}</div>
+          <div class="logo">SERKA <span class="express">EXPRESS</span></div>
+          <span class="logo-sub">COURRIER &middot; TODO A TIEMPO</span>
         </div>
       </div>
+      <div class="planilla-sheet-meta">
+        <span><strong>FECHA:</strong> ${planillaDateLabel(d)}</span>
+        <span><strong>AGENTE:</strong> ${user.city || "-"}: ${(user.name || "-").toUpperCase()}</span>
+        <span><strong>C. I Nº</strong> ${agentDniInput.value.trim() || "-"}, <strong>CEL Nº</strong> ${agentCelInput.value.trim() || "-"}</span>
+        <span><strong>MES:</strong> ${d.toLocaleDateString("es-PY", { month: "long" }).toUpperCase()}</span>
+        <span><strong>AÑO:</strong> ${d.getFullYear()}</span>
+      </div>
       <table>
+        <colgroup>
+          <col style="width:3%"><col style="width:3%"><col style="width:6%">
+          <col style="width:10%"><col style="width:8%"><col style="width:7%">
+          <col style="width:10%"><col style="width:8%"><col style="width:8%">
+          <col style="width:6%"><col style="width:8%"><col style="width:7%">
+          <col style="width:10%"><col style="width:2%"><col style="width:4%">
+        </colgroup>
         <thead>
           <tr>
-            <th>Código</th>
+            <th>Nro.</th>
+            <th>Dia</th>
+            <th>Guia</th>
+            <th>Remitente</th>
+            <th>Telefono Remitente</th>
+            <th>Origen</th>
             <th>Destinatario</th>
-            <th>Dirección</th>
-            <th>Tel</th>
+            <th>Telefono</th>
             <th>Destino</th>
-            <th>Pago</th>
-            <th>Monto</th>
-            <th>Valor a cobrar</th>
-            <th>Firma</th>
+            <th>Objeto</th>
+            <th>Forma de pago/des/orig</th>
+            <th class="num">Monto</th>
+            <th>Direccion</th>
+            <th></th>
+            <th>Ruteo</th>
           </tr>
         </thead>
         <tbody>
-          ${shipments
+          ${rows
             .map(
-              (s) => `
+              (r) => `
             <tr>
-              <td>${s.code}</td>
-              <td>${s.recipient_name}</td>
-              <td>${s.recipient_address || "-"}</td>
-              <td>${s.recipient_phone || "-"}</td>
-              <td>${s.destination || "-"}</td>
-              <td>${s.payment_method || "-"}</td>
-              <td>${formatMoney(s.total)}</td>
-              <td>${s.payment_method === "A cobrar" ? formatMoney(s.package_value) : "-"}</td>
+              <td>${r.nro}</td>
+              <td>${r.dia}</td>
+              <td>${r.guia}</td>
+              <td>${r.sender}</td>
+              <td>${r.senderPhone}</td>
+              <td>${r.origin}</td>
+              <td>${r.recipient}</td>
+              <td>${r.recipientPhone}</td>
+              <td>${r.destination}</td>
+              <td>${r.object}</td>
+              <td>${r.payment}</td>
+              <td class="num">${plainNumber(r.monto)}</td>
+              <td>${r.address}</td>
+              <td></td>
               <td></td>
             </tr>
           `
             )
             .join("")}
+          ${Array.from({ length: blankRows }, () => `
+            <tr>
+              <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+              <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+            </tr>
+          `).join("")}
         </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="11" class="total-label">TOTAL COBRO DESTINO</td>
+            <td class="total-value">${plainNumber(totalCobro)}</td>
+            <td colspan="2"></td>
+            <td class="saldo-cell" rowspan="2">SALDO<br>TOTAL</td>
+          </tr>
+          <tr>
+            <td colspan="11" class="total-label">A DEPOSITAR PARA SERKA EXPRESS</td>
+            <td class="total-value">${plainNumber(totalCobro)}</td>
+            <td colspan="2"></td>
+          </tr>
+        </tfoot>
       </table>
-      <div class="manifest-doc-footer">
-        <div>Firma del repartidor</div>
-        <div>Firma de recepción en base</div>
-      </div>
     </div>
   `;
 }
